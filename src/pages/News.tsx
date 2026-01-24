@@ -1,20 +1,23 @@
 import React, { useState } from 'react';
 import { toast } from 'sonner';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Search, Loader2 } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import ContentCard from '@/components/ui/ContentCard';
 import Modal from '@/components/ui/Modal';
 import DeleteConfirmation from '@/components/ui/DeleteConfirmation';
 import ImageUpload from '@/components/ui/ImageUpload';
-import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { useFirestore } from '@/hooks/useFirestore';
+import { useFirebaseStorage } from '@/hooks/useFirebaseStorage';
 import { NewsItem, ContentStatus } from '@/types/content';
 
 const News: React.FC = () => {
-  const [news, setNews] = useLocalStorage<NewsItem[]>('jebshit_news', []);
+  const { data: news, isLoading, add, update, remove } = useFirestore<NewsItem>('news');
+  const { deleteImage } = useFirebaseStorage();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<NewsItem | null>(null);
   const [deleteItem, setDeleteItem] = useState<NewsItem | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -60,7 +63,7 @@ const News: React.FC = () => {
     resetForm();
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!formData.title.trim()) {
@@ -73,35 +76,49 @@ const News: React.FC = () => {
       return;
     }
 
-    const now = new Date().toISOString();
+    setIsSubmitting(true);
 
-    if (editingItem) {
-      setNews((prev) =>
-        prev.map((item) =>
-          item.id === editingItem.id
-            ? { ...item, ...formData, updatedAt: now }
-            : item
-        )
-      );
-      toast.success('News updated successfully');
-    } else {
-      const newItem: NewsItem = {
-        id: crypto.randomUUID(),
-        ...formData,
-        createdAt: now,
-        updatedAt: now,
-      };
-      setNews((prev) => [newItem, ...prev]);
-      toast.success('News created successfully');
+    try {
+      if (editingItem) {
+        // Delete old image if changed
+        if (editingItem.image && editingItem.image !== formData.image) {
+          await deleteImage(editingItem.image);
+        }
+        await update(editingItem.id, formData);
+        toast.success('News updated successfully');
+      } else {
+        await add(formData);
+        toast.success('News created successfully');
+      }
+      closeModal();
+    } catch (error) {
+      toast.error('Failed to save news');
+    } finally {
+      setIsSubmitting(false);
     }
-
-    closeModal();
   };
 
-  const handleDelete = (item: NewsItem) => {
-    setNews((prev) => prev.filter((n) => n.id !== item.id));
-    toast.success('News deleted successfully');
+  const handleDelete = async (item: NewsItem) => {
+    try {
+      if (item.image) {
+        await deleteImage(item.image);
+      }
+      await remove(item.id);
+      toast.success('News deleted successfully');
+    } catch (error) {
+      toast.error('Failed to delete news');
+    }
   };
+
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -187,6 +204,7 @@ const News: React.FC = () => {
               <ImageUpload
                 value={formData.image}
                 onChange={(url) => setFormData({ ...formData, image: url || '' })}
+                storagePath="news"
               />
             </div>
 
@@ -215,11 +233,13 @@ const News: React.FC = () => {
             </div>
 
             <div className="flex gap-3 pt-4">
-              <button type="button" onClick={closeModal} className="btn-secondary flex-1">
+              <button type="button" onClick={closeModal} className="btn-secondary flex-1" disabled={isSubmitting}>
                 Cancel
               </button>
-              <button type="submit" className="btn-primary flex-1">
-                {editingItem ? 'Update' : 'Create'}
+              <button type="submit" className="btn-primary flex-1" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <Loader2 className="w-5 h-5 animate-spin mx-auto" />
+                ) : editingItem ? 'Update' : 'Create'}
               </button>
             </div>
           </form>

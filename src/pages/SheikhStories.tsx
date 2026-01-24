@@ -1,20 +1,23 @@
 import React, { useState } from 'react';
 import { toast } from 'sonner';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Search, Loader2 } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import ContentCard from '@/components/ui/ContentCard';
 import Modal from '@/components/ui/Modal';
 import DeleteConfirmation from '@/components/ui/DeleteConfirmation';
 import ImageUpload from '@/components/ui/ImageUpload';
-import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { useFirestore } from '@/hooks/useFirestore';
+import { useFirebaseStorage } from '@/hooks/useFirebaseStorage';
 import { SheikhStory, ContentStatus } from '@/types/content';
 
 const SheikhStories: React.FC = () => {
-  const [stories, setStories] = useLocalStorage<SheikhStory[]>('jebshit_stories', []);
+  const { data: stories, isLoading, add, update, remove } = useFirestore<SheikhStory>('stories');
+  const { deleteImage } = useFirebaseStorage();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<SheikhStory | null>(null);
   const [deleteItem, setDeleteItem] = useState<SheikhStory | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -60,7 +63,7 @@ const SheikhStories: React.FC = () => {
     resetForm();
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!formData.title.trim()) {
@@ -73,34 +76,39 @@ const SheikhStories: React.FC = () => {
       return;
     }
 
-    const now = new Date().toISOString();
+    setIsSubmitting(true);
 
-    if (editingItem) {
-      setStories((prev) =>
-        prev.map((item) =>
-          item.id === editingItem.id
-            ? { ...item, ...formData, updatedAt: now }
-            : item
-        )
-      );
-      toast.success('Story updated successfully');
-    } else {
-      const newItem: SheikhStory = {
-        id: crypto.randomUUID(),
-        ...formData,
-        createdAt: now,
-        updatedAt: now,
-      };
-      setStories((prev) => [newItem, ...prev]);
-      toast.success('Story created successfully');
+    try {
+      if (editingItem) {
+        // Delete removed images
+        const removedImages = (editingItem.images || []).filter(
+          (img) => !formData.images.includes(img)
+        );
+        await Promise.all(removedImages.map((img) => deleteImage(img)));
+        
+        await update(editingItem.id, formData);
+        toast.success('Story updated successfully');
+      } else {
+        await add(formData);
+        toast.success('Story created successfully');
+      }
+      closeModal();
+    } catch (error) {
+      toast.error('Failed to save story');
+    } finally {
+      setIsSubmitting(false);
     }
-
-    closeModal();
   };
 
-  const handleDelete = (item: SheikhStory) => {
-    setStories((prev) => prev.filter((s) => s.id !== item.id));
-    toast.success('Story deleted successfully');
+  const handleDelete = async (item: SheikhStory) => {
+    try {
+      // Delete all images
+      await Promise.all((item.images || []).map((img) => deleteImage(img)));
+      await remove(item.id);
+      toast.success('Story deleted successfully');
+    } catch (error) {
+      toast.error('Failed to delete story');
+    }
   };
 
   const handleImageChange = (url: string | undefined) => {
@@ -109,12 +117,27 @@ const SheikhStories: React.FC = () => {
     }
   };
 
-  const removeImage = (index: number) => {
+  const removeImage = async (index: number) => {
+    const imageToRemove = formData.images[index];
+    // Only delete from storage if it's a new upload (not saved yet)
+    if (!editingItem || !editingItem.images?.includes(imageToRemove)) {
+      await deleteImage(imageToRemove);
+    }
     setFormData({
       ...formData,
       images: formData.images.filter((_, i) => i !== index),
     });
   };
+
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -157,7 +180,7 @@ const SheikhStories: React.FC = () => {
                 key={item.id}
                 title={item.title}
                 subtitle={item.content.substring(0, 100)}
-                image={item.images[0]}
+                image={item.images?.[0]}
                 status={item.status}
                 date={new Date(item.publishDate).toLocaleDateString()}
                 onEdit={() => openModal(item)}
@@ -214,7 +237,7 @@ const SheikhStories: React.FC = () => {
                 </div>
               )}
               {formData.images.length < 4 && (
-                <ImageUpload onChange={handleImageChange} />
+                <ImageUpload onChange={handleImageChange} storagePath="stories" />
               )}
             </div>
 
@@ -243,11 +266,13 @@ const SheikhStories: React.FC = () => {
             </div>
 
             <div className="flex gap-3 pt-4">
-              <button type="button" onClick={closeModal} className="btn-secondary flex-1">
+              <button type="button" onClick={closeModal} className="btn-secondary flex-1" disabled={isSubmitting}>
                 Cancel
               </button>
-              <button type="submit" className="btn-primary flex-1">
-                {editingItem ? 'Update' : 'Create'}
+              <button type="submit" className="btn-primary flex-1" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <Loader2 className="w-5 h-5 animate-spin mx-auto" />
+                ) : editingItem ? 'Update' : 'Create'}
               </button>
             </div>
           </form>

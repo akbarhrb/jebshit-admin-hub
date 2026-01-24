@@ -1,20 +1,23 @@
 import React, { useState } from 'react';
 import { toast } from 'sonner';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Search, Loader2 } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import ContentCard from '@/components/ui/ContentCard';
 import Modal from '@/components/ui/Modal';
 import DeleteConfirmation from '@/components/ui/DeleteConfirmation';
 import ImageUpload from '@/components/ui/ImageUpload';
-import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { useFirestore } from '@/hooks/useFirestore';
+import { useFirebaseStorage } from '@/hooks/useFirebaseStorage';
 import { Martyr, ContentStatus } from '@/types/content';
 
 const Martyrs: React.FC = () => {
-  const [martyrs, setMartyrs] = useLocalStorage<Martyr[]>('jebshit_martyrs', []);
+  const { data: martyrs, isLoading, add, update, remove } = useFirestore<Martyr>('martyrs');
+  const { deleteImage } = useFirebaseStorage();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Martyr | null>(null);
   const [deleteItem, setDeleteItem] = useState<Martyr | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -60,7 +63,7 @@ const Martyrs: React.FC = () => {
     resetForm();
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!formData.name.trim()) {
@@ -73,35 +76,49 @@ const Martyrs: React.FC = () => {
       return;
     }
 
-    const now = new Date().toISOString();
+    setIsSubmitting(true);
 
-    if (editingItem) {
-      setMartyrs((prev) =>
-        prev.map((item) =>
-          item.id === editingItem.id
-            ? { ...item, ...formData, updatedAt: now }
-            : item
-        )
-      );
-      toast.success('Martyr updated successfully');
-    } else {
-      const newItem: Martyr = {
-        id: crypto.randomUUID(),
-        ...formData,
-        createdAt: now,
-        updatedAt: now,
-      };
-      setMartyrs((prev) => [newItem, ...prev]);
-      toast.success('Martyr created successfully');
+    try {
+      if (editingItem) {
+        // Delete old photo if changed
+        if (editingItem.photo && editingItem.photo !== formData.photo) {
+          await deleteImage(editingItem.photo);
+        }
+        await update(editingItem.id, formData);
+        toast.success('Martyr updated successfully');
+      } else {
+        await add(formData);
+        toast.success('Martyr created successfully');
+      }
+      closeModal();
+    } catch (error) {
+      toast.error('Failed to save martyr');
+    } finally {
+      setIsSubmitting(false);
     }
-
-    closeModal();
   };
 
-  const handleDelete = (item: Martyr) => {
-    setMartyrs((prev) => prev.filter((m) => m.id !== item.id));
-    toast.success('Martyr deleted successfully');
+  const handleDelete = async (item: Martyr) => {
+    try {
+      if (item.photo) {
+        await deleteImage(item.photo);
+      }
+      await remove(item.id);
+      toast.success('Martyr deleted successfully');
+    } catch (error) {
+      toast.error('Failed to delete martyr');
+    }
   };
+
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -187,6 +204,7 @@ const Martyrs: React.FC = () => {
               <ImageUpload
                 value={formData.photo}
                 onChange={(url) => setFormData({ ...formData, photo: url || '' })}
+                storagePath="martyrs"
               />
             </div>
 
@@ -215,11 +233,13 @@ const Martyrs: React.FC = () => {
             </div>
 
             <div className="flex gap-3 pt-4">
-              <button type="button" onClick={closeModal} className="btn-secondary flex-1">
+              <button type="button" onClick={closeModal} className="btn-secondary flex-1" disabled={isSubmitting}>
                 Cancel
               </button>
-              <button type="submit" className="btn-primary flex-1">
-                {editingItem ? 'Update' : 'Create'}
+              <button type="submit" className="btn-primary flex-1" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <Loader2 className="w-5 h-5 animate-spin mx-auto" />
+                ) : editingItem ? 'Update' : 'Create'}
               </button>
             </div>
           </form>
