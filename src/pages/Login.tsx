@@ -127,7 +127,7 @@ const Login: React.FC = () => {
           </form>
 
           <p className="text-center text-sm text-muted-foreground mt-6">
-            Demo: Enter any email and password (min 6 chars)
+            Sign in with your Firebase credentials
           </p>
         </div>
       </div>
