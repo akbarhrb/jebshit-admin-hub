@@ -3,9 +3,10 @@ export type ContentStatus = 'draft' | 'published';
 export interface NewsItem {
   id: string;
   title: string;
+  description: string;
   content: string;
-  image?: string;
-  publishDate: string;
+  date: string;
+  isUrgent: boolean;
   status: ContentStatus;
   createdAt: string;
   updatedAt: string;
