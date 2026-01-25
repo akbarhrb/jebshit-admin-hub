@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Plus, Search, Loader2, AlertTriangle } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -10,6 +11,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 
 const News: React.FC = () => {
+  const { t } = useTranslation();
   const { data: news, isLoading, add, update, remove } = useFirestore<NewsItem>('news');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<NewsItem | null>(null);
@@ -69,17 +71,17 @@ const News: React.FC = () => {
     e.preventDefault();
 
     if (!formData.title.trim()) {
-      toast.error('Title is required');
+      toast.error(t('news.titleRequired'));
       return;
     }
 
     if (!formData.description.trim()) {
-      toast.error('Description is required');
+      toast.error(t('news.descriptionRequired'));
       return;
     }
 
     if (!formData.content.trim()) {
-      toast.error('Content is required');
+      toast.error(t('news.contentRequired'));
       return;
     }
 
@@ -97,14 +99,14 @@ const News: React.FC = () => {
 
       if (editingItem) {
         await update(editingItem.id, newsData);
-        toast.success('News updated successfully');
+        toast.success(t('news.updatedSuccess'));
       } else {
         await add(newsData);
-        toast.success('News created successfully');
+        toast.success(t('news.createdSuccess'));
       }
       closeModal();
     } catch (error) {
-      toast.error('Failed to save news');
+      toast.error(t('news.saveFailed'));
     } finally {
       setIsSubmitting(false);
     }
@@ -113,9 +115,9 @@ const News: React.FC = () => {
   const handleDelete = async (item: NewsItem) => {
     try {
       await remove(item.id);
-      toast.success('News deleted successfully');
+      toast.success(t('news.deletedSuccess'));
     } catch (error) {
-      toast.error('Failed to delete news');
+      toast.error(t('news.deleteFailed'));
     }
   };
 
@@ -135,24 +137,24 @@ const News: React.FC = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
-            <h1 className="page-header">News</h1>
-            <p className="text-muted-foreground mt-1">Manage news articles</p>
+            <h1 className="page-header">{t('news.title')}</h1>
+            <p className="text-muted-foreground mt-1">{t('news.subtitle')}</p>
           </div>
           <button onClick={() => openModal()} className="btn-primary flex items-center gap-2">
             <Plus className="w-5 h-5" />
-            Add News
+            {t('news.addNews')}
           </button>
         </div>
 
         {/* Search */}
         <div className="relative mb-6">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+          <Search className="absolute start-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
           <input
             type="text"
-            placeholder="Search news..."
+            placeholder={t('news.searchNews')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="form-input pl-10"
+            className="form-input ps-10"
           />
         </div>
 
@@ -160,7 +162,7 @@ const News: React.FC = () => {
         {filteredNews.length === 0 ? (
           <div className="text-center py-12 bg-card rounded-xl border border-border">
             <p className="text-muted-foreground">
-              {searchQuery ? 'No news found matching your search' : 'No news yet. Create your first article!'}
+              {searchQuery ? t('news.noNewsFound') : t('news.noNews')}
             </p>
           </div>
         ) : (
@@ -185,7 +187,7 @@ const News: React.FC = () => {
                         ? 'bg-success/10 text-success' 
                         : 'bg-muted text-muted-foreground'
                     }`}>
-                      {item.status}
+                      {item.status === 'published' ? t('news.statusPublished') : t('news.statusDraft')}
                     </span>
                   </div>
                   <p className="text-sm text-muted-foreground line-clamp-2 mb-3" dir="auto">
@@ -193,13 +195,13 @@ const News: React.FC = () => {
                   </p>
                   <div className="flex items-center justify-between pt-3 border-t border-border">
                     <span className="text-xs text-muted-foreground">
-                      {item.date ? new Date(item.date).toLocaleDateString() : 'No date'}
+                      {item.date ? new Date(item.date).toLocaleDateString() : t('news.noDate')}
                     </span>
                     <div className="flex gap-1">
                       <button
                         onClick={() => openModal(item)}
                         className="p-2 rounded-lg hover:bg-secondary transition-colors"
-                        title="Edit"
+                        title={t('common.edit')}
                       >
                         <svg className="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -208,7 +210,7 @@ const News: React.FC = () => {
                       <button
                         onClick={() => setDeleteItem(item)}
                         className="p-2 rounded-lg hover:bg-destructive/10 transition-colors"
-                        title="Delete"
+                        title={t('common.delete')}
                       >
                         <svg className="w-4 h-4 text-destructive" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -226,46 +228,46 @@ const News: React.FC = () => {
         <Modal
           isOpen={isModalOpen}
           onClose={closeModal}
-          title={editingItem ? 'Edit News' : 'Create News'}
+          title={editingItem ? t('news.editNews') : t('news.createNews')}
         >
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="block text-sm font-medium mb-2">Title *</label>
+              <label className="block text-sm font-medium mb-2">{t('news.titleLabel')} *</label>
               <input
                 type="text"
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 className="form-input"
-                placeholder="Enter title"
+                placeholder={t('news.titlePlaceholder')}
                 dir="auto"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Description *</label>
+              <label className="block text-sm font-medium mb-2">{t('news.descriptionLabel')} *</label>
               <textarea
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 className="form-input min-h-[80px] resize-y"
-                placeholder="Enter a short description"
+                placeholder={t('news.descriptionPlaceholder')}
                 dir="auto"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Content *</label>
+              <label className="block text-sm font-medium mb-2">{t('news.contentLabel')} *</label>
               <textarea
                 value={formData.content}
                 onChange={(e) => setFormData({ ...formData, content: e.target.value })}
                 className="form-input min-h-[200px] resize-y"
-                placeholder="Enter full content (supports Arabic)"
+                placeholder={t('news.contentPlaceholder')}
                 dir="auto"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-2">Date</label>
+                <label className="block text-sm font-medium mb-2">{t('news.dateLabel')}</label>
                 <input
                   type="date"
                   value={formData.date}
@@ -275,14 +277,14 @@ const News: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2">Status</label>
+                <label className="block text-sm font-medium mb-2">{t('news.statusLabel')}</label>
                 <select
                   value={formData.status}
                   onChange={(e) => setFormData({ ...formData, status: e.target.value as ContentStatus })}
                   className="form-input"
                 >
-                  <option value="draft">Draft</option>
-                  <option value="published">Published</option>
+                  <option value="draft">{t('news.statusDraft')}</option>
+                  <option value="published">{t('news.statusPublished')}</option>
                 </select>
               </div>
             </div>
@@ -295,18 +297,18 @@ const News: React.FC = () => {
               />
               <Label htmlFor="isUrgent" className="flex items-center gap-2 cursor-pointer">
                 <AlertTriangle className="w-4 h-4 text-destructive" />
-                Mark as Urgent
+                {t('news.markAsUrgent')}
               </Label>
             </div>
 
             <div className="flex gap-3 pt-4">
               <button type="button" onClick={closeModal} className="btn-secondary flex-1" disabled={isSubmitting}>
-                Cancel
+                {t('common.cancel')}
               </button>
               <button type="submit" className="btn-primary flex-1" disabled={isSubmitting}>
                 {isSubmitting ? (
                   <Loader2 className="w-5 h-5 animate-spin mx-auto" />
-                ) : editingItem ? 'Update' : 'Create'}
+                ) : editingItem ? t('common.update') : t('common.create')}
               </button>
             </div>
           </form>
@@ -317,8 +319,8 @@ const News: React.FC = () => {
           isOpen={!!deleteItem}
           onClose={() => setDeleteItem(null)}
           onConfirm={() => deleteItem && handleDelete(deleteItem)}
-          title="Delete News"
-          message="Are you sure you want to delete this news article? This action cannot be undone."
+          title={t('news.deleteTitle')}
+          message={t('news.deleteMessage')}
         />
       </div>
     </DashboardLayout>

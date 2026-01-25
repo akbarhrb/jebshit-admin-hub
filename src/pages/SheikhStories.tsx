@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Plus, Search, Loader2 } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -11,6 +12,7 @@ import { useFirebaseStorage } from '@/hooks/useFirebaseStorage';
 import { SheikhStory, ContentStatus } from '@/types/content';
 
 const SheikhStories: React.FC = () => {
+  const { t } = useTranslation();
   const { data: stories, isLoading, add, update, remove } = useFirestore<SheikhStory>('stories');
   const { deleteImage } = useFirebaseStorage();
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -67,12 +69,12 @@ const SheikhStories: React.FC = () => {
     e.preventDefault();
 
     if (!formData.title.trim()) {
-      toast.error('Title is required');
+      toast.error(t('stories.titleRequired'));
       return;
     }
 
     if (!formData.content.trim()) {
-      toast.error('Content is required');
+      toast.error(t('stories.contentRequired'));
       return;
     }
 
@@ -87,14 +89,14 @@ const SheikhStories: React.FC = () => {
         await Promise.all(removedImages.map((img) => deleteImage(img)));
         
         await update(editingItem.id, formData);
-        toast.success('Story updated successfully');
+        toast.success(t('stories.updatedSuccess'));
       } else {
         await add(formData);
-        toast.success('Story created successfully');
+        toast.success(t('stories.createdSuccess'));
       }
       closeModal();
     } catch (error) {
-      toast.error('Failed to save story');
+      toast.error(t('stories.saveFailed'));
     } finally {
       setIsSubmitting(false);
     }
@@ -105,9 +107,9 @@ const SheikhStories: React.FC = () => {
       // Delete all images
       await Promise.all((item.images || []).map((img) => deleteImage(img)));
       await remove(item.id);
-      toast.success('Story deleted successfully');
+      toast.success(t('stories.deletedSuccess'));
     } catch (error) {
-      toast.error('Failed to delete story');
+      toast.error(t('stories.deleteFailed'));
     }
   };
 
@@ -145,24 +147,24 @@ const SheikhStories: React.FC = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
-            <h1 className="page-header">Sheikh Ragheb Harb Stories</h1>
-            <p className="text-muted-foreground mt-1">Manage stories and teachings</p>
+            <h1 className="page-header">{t('stories.title')}</h1>
+            <p className="text-muted-foreground mt-1">{t('stories.subtitle')}</p>
           </div>
           <button onClick={() => openModal()} className="btn-primary flex items-center gap-2">
             <Plus className="w-5 h-5" />
-            Add Story
+            {t('stories.addStory')}
           </button>
         </div>
 
         {/* Search */}
         <div className="relative mb-6">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+          <Search className="absolute start-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
           <input
             type="text"
-            placeholder="Search stories..."
+            placeholder={t('stories.searchStories')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="form-input pl-10"
+            className="form-input ps-10"
           />
         </div>
 
@@ -170,7 +172,7 @@ const SheikhStories: React.FC = () => {
         {filteredStories.length === 0 ? (
           <div className="text-center py-12 bg-card rounded-xl border border-border">
             <p className="text-muted-foreground">
-              {searchQuery ? 'No stories found matching your search' : 'No stories yet. Add your first story!'}
+              {searchQuery ? t('stories.noStoriesFound') : t('stories.noStories')}
             </p>
           </div>
         ) : (
@@ -182,6 +184,7 @@ const SheikhStories: React.FC = () => {
                 subtitle={item.content.substring(0, 100)}
                 image={item.images?.[0]}
                 status={item.status}
+                statusLabels={{ published: t('stories.statusPublished'), draft: t('stories.statusDraft') }}
                 date={new Date(item.publishDate).toLocaleDateString()}
                 onEdit={() => openModal(item)}
                 onDelete={() => setDeleteItem(item)}
@@ -194,32 +197,34 @@ const SheikhStories: React.FC = () => {
         <Modal
           isOpen={isModalOpen}
           onClose={closeModal}
-          title={editingItem ? 'Edit Story' : 'Add Story'}
+          title={editingItem ? t('stories.editStory') : t('stories.addStory')}
         >
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="block text-sm font-medium mb-2">Title *</label>
+              <label className="block text-sm font-medium mb-2">{t('stories.titleLabel')} *</label>
               <input
                 type="text"
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 className="form-input"
-                placeholder="Enter title"
+                placeholder={t('stories.titlePlaceholder')}
+                dir="auto"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Story Content *</label>
+              <label className="block text-sm font-medium mb-2">{t('stories.contentLabel')} *</label>
               <textarea
                 value={formData.content}
                 onChange={(e) => setFormData({ ...formData, content: e.target.value })}
                 className="form-input min-h-[150px] resize-y"
-                placeholder="Enter story content"
+                placeholder={t('stories.contentPlaceholder')}
+                dir="auto"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Images (up to 4)</label>
+              <label className="block text-sm font-medium mb-2">{t('stories.imageLabel')} (4 max)</label>
               {formData.images.length > 0 && (
                 <div className="grid grid-cols-4 gap-2 mb-3">
                   {formData.images.map((img, index) => (
@@ -228,7 +233,7 @@ const SheikhStories: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => removeImage(index)}
-                        className="absolute top-1 right-1 w-5 h-5 bg-destructive text-destructive-foreground rounded-full text-xs flex items-center justify-center"
+                        className="absolute top-1 end-1 w-5 h-5 bg-destructive text-destructive-foreground rounded-full text-xs flex items-center justify-center"
                       >
                         ×
                       </button>
@@ -243,7 +248,7 @@ const SheikhStories: React.FC = () => {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-2">Publish Date</label>
+                <label className="block text-sm font-medium mb-2">{t('news.dateLabel')}</label>
                 <input
                   type="date"
                   value={formData.publishDate}
@@ -253,26 +258,26 @@ const SheikhStories: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2">Status</label>
+                <label className="block text-sm font-medium mb-2">{t('stories.statusLabel')}</label>
                 <select
                   value={formData.status}
                   onChange={(e) => setFormData({ ...formData, status: e.target.value as ContentStatus })}
                   className="form-input"
                 >
-                  <option value="draft">Draft</option>
-                  <option value="published">Published</option>
+                  <option value="draft">{t('stories.statusDraft')}</option>
+                  <option value="published">{t('stories.statusPublished')}</option>
                 </select>
               </div>
             </div>
 
             <div className="flex gap-3 pt-4">
               <button type="button" onClick={closeModal} className="btn-secondary flex-1" disabled={isSubmitting}>
-                Cancel
+                {t('common.cancel')}
               </button>
               <button type="submit" className="btn-primary flex-1" disabled={isSubmitting}>
                 {isSubmitting ? (
                   <Loader2 className="w-5 h-5 animate-spin mx-auto" />
-                ) : editingItem ? 'Update' : 'Create'}
+                ) : editingItem ? t('common.update') : t('common.create')}
               </button>
             </div>
           </form>
@@ -283,8 +288,8 @@ const SheikhStories: React.FC = () => {
           isOpen={!!deleteItem}
           onClose={() => setDeleteItem(null)}
           onConfirm={() => deleteItem && handleDelete(deleteItem)}
-          title="Delete Story"
-          message="Are you sure you want to delete this story? This action cannot be undone."
+          title={t('stories.deleteTitle')}
+          message={t('stories.deleteMessage')}
         />
       </div>
     </DashboardLayout>

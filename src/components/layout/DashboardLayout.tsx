@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/AuthContext';
+import LanguageToggle from '@/components/LanguageToggle';
 import { 
   Newspaper, 
   Users, 
@@ -15,18 +17,19 @@ interface DashboardLayoutProps {
   children: React.ReactNode;
 }
 
-const navItems = [
-  { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { path: '/news', label: 'News', icon: Newspaper },
-  { path: '/martyrs', label: 'Martyrs', icon: Users },
-  { path: '/sheikh-stories', label: 'Sheikh Stories', icon: BookOpen },
-];
-
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
+  const { t } = useTranslation();
   const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  const navItems = [
+    { path: '/dashboard', label: t('nav.dashboard'), icon: LayoutDashboard },
+    { path: '/news', label: t('nav.news'), icon: Newspaper },
+    { path: '/martyrs', label: t('nav.martyrs'), icon: Users },
+    { path: '/sheikh-stories', label: t('nav.sheikhStories'), icon: BookOpen },
+  ];
 
   const handleLogout = () => {
     logout();
@@ -47,19 +50,26 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
 
       {/* Sidebar */}
       <aside className={`
-        fixed lg:static inset-y-0 left-0 z-50 w-64 bg-sidebar transform transition-transform duration-300 ease-in-out
+        fixed lg:static inset-y-0 z-50 w-64 bg-sidebar transform transition-transform duration-300 ease-in-out
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+        rtl:left-auto rtl:right-0 rtl:translate-x-full rtl:lg:translate-x-0
+        ${isSidebarOpen ? 'rtl:translate-x-0' : ''}
       `}>
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="flex items-center justify-between px-6 py-5 border-b border-sidebar-border">
-            <h1 className="text-xl font-bold text-sidebar-foreground">Jebshit</h1>
+            <h1 className="text-xl font-bold text-sidebar-foreground">{t('common.appName')}</h1>
             <button 
               onClick={() => setIsSidebarOpen(false)}
               className="lg:hidden text-sidebar-foreground hover:text-sidebar-muted"
             >
               <X className="w-5 h-5" />
             </button>
+          </div>
+
+          {/* Language Toggle */}
+          <div className="px-3 py-3 border-b border-sidebar-border">
+            <LanguageToggle />
           </div>
 
           {/* Navigation */}
@@ -83,15 +93,15 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
           {/* User section */}
           <div className="px-3 py-4 border-t border-sidebar-border">
             <div className="px-4 py-2 mb-2">
-              <p className="text-sm text-sidebar-muted">Logged in as</p>
+              <p className="text-sm text-sidebar-muted">{t('nav.loggedInAs')}</p>
               <p className="text-sm font-medium text-sidebar-foreground truncate">{user?.email}</p>
             </div>
             <button
               onClick={handleLogout}
-              className="sidebar-link w-full text-left hover:bg-destructive/10 hover:text-destructive"
+              className="sidebar-link w-full hover:bg-destructive/10 hover:text-destructive"
             >
               <LogOut className="w-5 h-5" />
-              <span>Logout</span>
+              <span>{t('auth.signOut')}</span>
             </button>
           </div>
         </div>
@@ -107,7 +117,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
           >
             <Menu className="w-5 h-5" />
           </button>
-          <h1 className="text-lg font-semibold">Jebshit</h1>
+          <h1 className="text-lg font-semibold">{t('common.appName')}</h1>
           <div className="w-9" />
         </header>
 

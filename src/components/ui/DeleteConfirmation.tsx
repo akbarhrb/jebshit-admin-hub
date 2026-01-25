@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import Modal from './Modal';
 import { AlertTriangle } from 'lucide-react';
 
@@ -17,6 +18,8 @@ const DeleteConfirmation: React.FC<DeleteConfirmationProps> = ({
   title,
   message,
 }) => {
+  const { t } = useTranslation();
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={title}>
       <div className="flex flex-col items-center text-center">
@@ -29,7 +32,7 @@ const DeleteConfirmation: React.FC<DeleteConfirmationProps> = ({
             onClick={onClose}
             className="btn-secondary flex-1"
           >
-            Cancel
+            {t('common.cancel')}
           </button>
           <button
             onClick={() => {
@@ -38,7 +41,7 @@ const DeleteConfirmation: React.FC<DeleteConfirmationProps> = ({
             }}
             className="btn-destructive flex-1"
           >
-            Delete
+            {t('common.delete')}
           </button>
         </div>
       </div>
