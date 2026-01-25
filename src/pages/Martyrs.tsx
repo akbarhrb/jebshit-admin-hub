@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Plus, Search, Loader2 } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -11,6 +12,7 @@ import { useFirebaseStorage } from '@/hooks/useFirebaseStorage';
 import { Martyr, ContentStatus } from '@/types/content';
 
 const Martyrs: React.FC = () => {
+  const { t } = useTranslation();
   const { data: martyrs, isLoading, add, update, remove } = useFirestore<Martyr>('martyrs');
   const { deleteImage } = useFirebaseStorage();
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -67,12 +69,12 @@ const Martyrs: React.FC = () => {
     e.preventDefault();
 
     if (!formData.name.trim()) {
-      toast.error('Name is required');
+      toast.error(t('martyrs.nameRequired'));
       return;
     }
 
     if (!formData.biography.trim()) {
-      toast.error('Biography is required');
+      toast.error(t('martyrs.biographyRequired'));
       return;
     }
 
@@ -85,14 +87,14 @@ const Martyrs: React.FC = () => {
           await deleteImage(editingItem.photo);
         }
         await update(editingItem.id, formData);
-        toast.success('Martyr updated successfully');
+        toast.success(t('martyrs.updatedSuccess'));
       } else {
         await add(formData);
-        toast.success('Martyr created successfully');
+        toast.success(t('martyrs.createdSuccess'));
       }
       closeModal();
     } catch (error) {
-      toast.error('Failed to save martyr');
+      toast.error(t('martyrs.saveFailed'));
     } finally {
       setIsSubmitting(false);
     }
@@ -104,9 +106,9 @@ const Martyrs: React.FC = () => {
         await deleteImage(item.photo);
       }
       await remove(item.id);
-      toast.success('Martyr deleted successfully');
+      toast.success(t('martyrs.deletedSuccess'));
     } catch (error) {
-      toast.error('Failed to delete martyr');
+      toast.error(t('martyrs.deleteFailed'));
     }
   };
 
@@ -126,24 +128,24 @@ const Martyrs: React.FC = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
-            <h1 className="page-header">Martyrs</h1>
-            <p className="text-muted-foreground mt-1">Manage martyr profiles</p>
+            <h1 className="page-header">{t('martyrs.title')}</h1>
+            <p className="text-muted-foreground mt-1">{t('martyrs.subtitle')}</p>
           </div>
           <button onClick={() => openModal()} className="btn-primary flex items-center gap-2">
             <Plus className="w-5 h-5" />
-            Add Martyr
+            {t('martyrs.addMartyr')}
           </button>
         </div>
 
         {/* Search */}
         <div className="relative mb-6">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+          <Search className="absolute start-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
           <input
             type="text"
-            placeholder="Search martyrs..."
+            placeholder={t('martyrs.searchMartyrs')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="form-input pl-10"
+            className="form-input ps-10"
           />
         </div>
 
@@ -151,7 +153,7 @@ const Martyrs: React.FC = () => {
         {filteredMartyrs.length === 0 ? (
           <div className="text-center py-12 bg-card rounded-xl border border-border">
             <p className="text-muted-foreground">
-              {searchQuery ? 'No martyrs found matching your search' : 'No martyrs yet. Add your first profile!'}
+              {searchQuery ? t('martyrs.noMartyrsFound') : t('martyrs.noMartyrs')}
             </p>
           </div>
         ) : (
@@ -163,7 +165,8 @@ const Martyrs: React.FC = () => {
                 subtitle={item.biography.substring(0, 100)}
                 image={item.photo}
                 status={item.status}
-                date={item.dateOfMartyrdom ? new Date(item.dateOfMartyrdom).toLocaleDateString() : 'Date not set'}
+                statusLabels={{ published: t('martyrs.statusPublished'), draft: t('martyrs.statusDraft') }}
+                date={item.dateOfMartyrdom ? new Date(item.dateOfMartyrdom).toLocaleDateString() : ''}
                 onEdit={() => openModal(item)}
                 onDelete={() => setDeleteItem(item)}
               />
@@ -175,32 +178,34 @@ const Martyrs: React.FC = () => {
         <Modal
           isOpen={isModalOpen}
           onClose={closeModal}
-          title={editingItem ? 'Edit Martyr' : 'Add Martyr'}
+          title={editingItem ? t('martyrs.editMartyr') : t('martyrs.addMartyr')}
         >
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="block text-sm font-medium mb-2">Name *</label>
+              <label className="block text-sm font-medium mb-2">{t('martyrs.nameLabel')} *</label>
               <input
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 className="form-input"
-                placeholder="Enter name"
+                placeholder={t('martyrs.namePlaceholder')}
+                dir="auto"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Biography *</label>
+              <label className="block text-sm font-medium mb-2">{t('martyrs.biographyLabel')} *</label>
               <textarea
                 value={formData.biography}
                 onChange={(e) => setFormData({ ...formData, biography: e.target.value })}
                 className="form-input min-h-[150px] resize-y"
-                placeholder="Enter biography"
+                placeholder={t('martyrs.biographyPlaceholder')}
+                dir="auto"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Photo</label>
+              <label className="block text-sm font-medium mb-2">{t('martyrs.imageLabel')}</label>
               <ImageUpload
                 value={formData.photo}
                 onChange={(url) => setFormData({ ...formData, photo: url || '' })}
@@ -210,7 +215,7 @@ const Martyrs: React.FC = () => {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-2">Date of Martyrdom</label>
+                <label className="block text-sm font-medium mb-2">{t('martyrs.dateOfMartyrdomLabel')}</label>
                 <input
                   type="date"
                   value={formData.dateOfMartyrdom}
@@ -220,26 +225,26 @@ const Martyrs: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2">Status</label>
+                <label className="block text-sm font-medium mb-2">{t('martyrs.statusLabel')}</label>
                 <select
                   value={formData.status}
                   onChange={(e) => setFormData({ ...formData, status: e.target.value as ContentStatus })}
                   className="form-input"
                 >
-                  <option value="draft">Draft</option>
-                  <option value="published">Published</option>
+                  <option value="draft">{t('martyrs.statusDraft')}</option>
+                  <option value="published">{t('martyrs.statusPublished')}</option>
                 </select>
               </div>
             </div>
 
             <div className="flex gap-3 pt-4">
               <button type="button" onClick={closeModal} className="btn-secondary flex-1" disabled={isSubmitting}>
-                Cancel
+                {t('common.cancel')}
               </button>
               <button type="submit" className="btn-primary flex-1" disabled={isSubmitting}>
                 {isSubmitting ? (
                   <Loader2 className="w-5 h-5 animate-spin mx-auto" />
-                ) : editingItem ? 'Update' : 'Create'}
+                ) : editingItem ? t('common.update') : t('common.create')}
               </button>
             </div>
           </form>
@@ -250,8 +255,8 @@ const Martyrs: React.FC = () => {
           isOpen={!!deleteItem}
           onClose={() => setDeleteItem(null)}
           onConfirm={() => deleteItem && handleDelete(deleteItem)}
-          title="Delete Martyr"
-          message="Are you sure you want to delete this martyr profile? This action cannot be undone."
+          title={t('martyrs.deleteTitle')}
+          message={t('martyrs.deleteMessage')}
         />
       </div>
     </DashboardLayout>

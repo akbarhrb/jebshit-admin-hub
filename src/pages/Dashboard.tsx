@@ -1,18 +1,23 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { useTranslation } from 'react-i18next';
+import { useFirestore } from '@/hooks/useFirestore';
 import { NewsItem, Martyr, SheikhStory } from '@/types/content';
-import { Newspaper, Users, BookOpen, ArrowRight } from 'lucide-react';
+import { Newspaper, Users, BookOpen, ArrowRight, ArrowLeft } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 
 const Dashboard: React.FC = () => {
-  const [news] = useLocalStorage<NewsItem[]>('jebshit_news', []);
-  const [martyrs] = useLocalStorage<Martyr[]>('jebshit_martyrs', []);
-  const [stories] = useLocalStorage<SheikhStory[]>('jebshit_stories', []);
+  const { t, i18n } = useTranslation();
+  const { data: news } = useFirestore<NewsItem>('news');
+  const { data: martyrs } = useFirestore<Martyr>('martyrs');
+  const { data: stories } = useFirestore<SheikhStory>('stories');
+
+  const isRTL = i18n.language === 'ar';
+  const ArrowIcon = isRTL ? ArrowLeft : ArrowRight;
 
   const stats = [
     {
-      label: 'News Articles',
+      label: t('dashboard.newsArticles'),
       count: news.length,
       published: news.filter((n) => n.status === 'published').length,
       icon: Newspaper,
@@ -20,7 +25,7 @@ const Dashboard: React.FC = () => {
       color: 'bg-primary/10 text-primary',
     },
     {
-      label: 'Martyrs',
+      label: t('dashboard.martyrsCount'),
       count: martyrs.length,
       published: martyrs.filter((m) => m.status === 'published').length,
       icon: Users,
@@ -28,7 +33,7 @@ const Dashboard: React.FC = () => {
       color: 'bg-warning/10 text-warning',
     },
     {
-      label: 'Sheikh Stories',
+      label: t('dashboard.sheikhStoriesCount'),
       count: stories.length,
       published: stories.filter((s) => s.status === 'published').length,
       icon: BookOpen,
@@ -41,8 +46,8 @@ const Dashboard: React.FC = () => {
     <DashboardLayout>
       <div className="max-w-6xl mx-auto">
         <div className="mb-8">
-          <h1 className="page-header">Dashboard</h1>
-          <p className="text-muted-foreground mt-1">Overview of your content</p>
+          <h1 className="page-header">{t('dashboard.title')}</h1>
+          <p className="text-muted-foreground mt-1">{t('dashboard.subtitle')}</p>
         </div>
 
         {/* Stats Grid */}
@@ -59,12 +64,12 @@ const Dashboard: React.FC = () => {
                   <div className={`p-3 rounded-lg ${stat.color}`}>
                     <Icon className="w-6 h-6" />
                   </div>
-                  <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all" />
+                  <ArrowIcon className={`w-5 h-5 text-muted-foreground group-hover:text-foreground transition-all ${isRTL ? 'group-hover:-translate-x-1' : 'group-hover:translate-x-1'}`} />
                 </div>
                 <h3 className="text-3xl font-bold text-card-foreground mb-1">{stat.count}</h3>
                 <p className="text-muted-foreground">{stat.label}</p>
                 <p className="text-sm text-muted-foreground mt-2">
-                  {stat.published} published
+                  {stat.published} {t('dashboard.published')}
                 </p>
               </Link>
             );
@@ -73,16 +78,16 @@ const Dashboard: React.FC = () => {
 
         {/* Quick Actions */}
         <div className="bg-card rounded-xl border border-border p-6">
-          <h2 className="text-lg font-semibold text-card-foreground mb-4">Quick Actions</h2>
+          <h2 className="text-lg font-semibold text-card-foreground mb-4">{t('dashboard.quickActions')}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <Link to="/news" className="btn-secondary text-center">
-              Add News Article
+              {t('dashboard.addNewsArticle')}
             </Link>
             <Link to="/martyrs" className="btn-secondary text-center">
-              Add Martyr
+              {t('dashboard.addMartyr')}
             </Link>
             <Link to="/sheikh-stories" className="btn-secondary text-center">
-              Add Sheikh Story
+              {t('dashboard.addSheikhStory')}
             </Link>
           </div>
         </div>

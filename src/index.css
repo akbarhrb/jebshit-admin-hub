@@ -168,3 +168,26 @@
     }
   }
 }
+
+/* RTL Support */
+[dir="rtl"] .sidebar-link {
+  @apply flex-row;
+}
+
+[dir="rtl"] .form-input {
+  text-align: right;
+}
+
+/* Ensure proper spacing in RTL mode */
+[dir="rtl"] .gap-2 {
+  gap: 0.5rem;
+}
+
+[dir="rtl"] .gap-3 {
+  gap: 0.75rem;
+}
+
+/* RTL icon flip for directional icons */
+[dir="rtl"] .rtl-flip {
+  transform: scaleX(-1);
+}
