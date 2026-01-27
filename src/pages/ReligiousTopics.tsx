@@ -10,20 +10,21 @@ import ImageUpload from '@/components/ui/ImageUpload';
 import VideoUpload, { VideoPreview } from '@/components/ui/VideoUpload';
 import { useFirestore } from '@/hooks/useFirestore';
 import { useFirebaseStorage } from '@/hooks/useFirebaseStorage';
-import { SheikhStory, ContentStatus } from '@/types/content';
+import { ReligiousTopic, ContentStatus } from '@/types/content';
 
-const SheikhStories: React.FC = () => {
+const ReligiousTopics: React.FC = () => {
   const { t } = useTranslation();
-  const { data: stories, isLoading, add, update, remove } = useFirestore<SheikhStory>('stories');
+  const { data: topics, isLoading, add, update, remove } = useFirestore<ReligiousTopic>('topics');
   const { deleteImage } = useFirebaseStorage();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<SheikhStory | null>(null);
-  const [deleteItem, setDeleteItem] = useState<SheikhStory | null>(null);
+  const [editingItem, setEditingItem] = useState<ReligiousTopic | null>(null);
+  const [deleteItem, setDeleteItem] = useState<ReligiousTopic | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
     title: '',
+    description: '',
     content: '',
     images: [] as string[],
     videos: [] as string[],
@@ -31,13 +32,14 @@ const SheikhStories: React.FC = () => {
     status: 'draft' as ContentStatus,
   });
 
-  const filteredStories = stories.filter((item) =>
+  const filteredTopics = topics.filter((item) =>
     item.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const resetForm = () => {
     setFormData({
       title: '',
+      description: '',
       content: '',
       images: [],
       videos: [],
@@ -47,11 +49,12 @@ const SheikhStories: React.FC = () => {
     setEditingItem(null);
   };
 
-  const openModal = (item?: SheikhStory) => {
+  const openModal = (item?: ReligiousTopic) => {
     if (item) {
       setEditingItem(item);
       setFormData({
         title: item.title,
+        description: item.description,
         content: item.content,
         images: item.images || [],
         videos: item.videos || [],
@@ -73,12 +76,12 @@ const SheikhStories: React.FC = () => {
     e.preventDefault();
 
     if (!formData.title.trim()) {
-      toast.error(t('stories.titleRequired'));
+      toast.error(t('topics.titleRequired'));
       return;
     }
 
-    if (!formData.content.trim()) {
-      toast.error(t('stories.contentRequired'));
+    if (!formData.description.trim()) {
+      toast.error(t('topics.descriptionRequired'));
       return;
     }
 
@@ -100,36 +103,35 @@ const SheikhStories: React.FC = () => {
         ]);
         
         await update(editingItem.id, formData);
-        toast.success(t('stories.updatedSuccess'));
+        toast.success(t('topics.updatedSuccess'));
       } else {
         await add(formData);
-        toast.success(t('stories.createdSuccess'));
+        toast.success(t('topics.createdSuccess'));
       }
       closeModal();
     } catch (error) {
-      toast.error(t('stories.saveFailed'));
+      toast.error(t('topics.saveFailed'));
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleDelete = async (item: SheikhStory) => {
+  const handleDelete = async (item: ReligiousTopic) => {
     try {
-      // Delete all images and videos
       await Promise.all([
         ...(item.images || []).map((img) => deleteImage(img)),
         ...(item.videos || []).map((vid) => deleteImage(vid)),
       ]);
       await remove(item.id);
-      toast.success(t('stories.deletedSuccess'));
+      toast.success(t('topics.deletedSuccess'));
     } catch (error) {
-      toast.error(t('stories.deleteFailed'));
+      toast.error(t('topics.deleteFailed'));
     }
   };
 
   const handleImageChange = (url: string | undefined) => {
     if (url) {
-      setFormData({ ...formData, images: [url, ...formData.images.slice(0, 3)] });
+      setFormData({ ...formData, images: [url, ...formData.images.slice(0, 5)] });
     }
   };
 
@@ -174,47 +176,44 @@ const SheikhStories: React.FC = () => {
   return (
     <DashboardLayout>
       <div className="max-w-6xl mx-auto">
-        {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
-            <h1 className="page-header">{t('stories.title')}</h1>
-            <p className="text-muted-foreground mt-1">{t('stories.subtitle')}</p>
+            <h1 className="page-header">{t('topics.title')}</h1>
+            <p className="text-muted-foreground mt-1">{t('topics.subtitle')}</p>
           </div>
           <button onClick={() => openModal()} className="btn-primary flex items-center gap-2">
             <Plus className="w-5 h-5" />
-            {t('stories.addStory')}
+            {t('topics.addTopic')}
           </button>
         </div>
 
-        {/* Search */}
         <div className="relative mb-6">
           <Search className="absolute start-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
           <input
             type="text"
-            placeholder={t('stories.searchStories')}
+            placeholder={t('topics.searchTopics')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="form-input ps-10"
           />
         </div>
 
-        {/* Grid */}
-        {filteredStories.length === 0 ? (
+        {filteredTopics.length === 0 ? (
           <div className="text-center py-12 bg-card rounded-xl border border-border">
             <p className="text-muted-foreground">
-              {searchQuery ? t('stories.noStoriesFound') : t('stories.noStories')}
+              {searchQuery ? t('topics.noTopicsFound') : t('topics.noTopics')}
             </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredStories.map((item) => (
+            {filteredTopics.map((item) => (
               <ContentCard
                 key={item.id}
                 title={item.title}
-                subtitle={item.content.substring(0, 100)}
+                subtitle={item.description}
                 image={item.images?.[0]}
                 status={item.status}
-                statusLabels={{ published: t('stories.statusPublished'), draft: t('stories.statusDraft') }}
+                statusLabels={{ published: t('topics.statusPublished'), draft: t('topics.statusDraft') }}
                 date={new Date(item.publishDate).toLocaleDateString()}
                 onEdit={() => openModal(item)}
                 onDelete={() => setDeleteItem(item)}
@@ -223,41 +222,51 @@ const SheikhStories: React.FC = () => {
           </div>
         )}
 
-        {/* Form Modal */}
         <Modal
           isOpen={isModalOpen}
           onClose={closeModal}
-          title={editingItem ? t('stories.editStory') : t('stories.addStory')}
+          title={editingItem ? t('topics.editTopic') : t('topics.addTopic')}
         >
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="block text-sm font-medium mb-2">{t('stories.titleLabel')} *</label>
+              <label className="block text-sm font-medium mb-2">{t('topics.titleLabel')} *</label>
               <input
                 type="text"
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 className="form-input"
-                placeholder={t('stories.titlePlaceholder')}
+                placeholder={t('topics.titlePlaceholder')}
                 dir="auto"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">{t('stories.contentLabel')} *</label>
+              <label className="block text-sm font-medium mb-2">{t('topics.descriptionLabel')} *</label>
+              <textarea
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                className="form-input min-h-[80px] resize-y"
+                placeholder={t('topics.descriptionPlaceholder')}
+                dir="auto"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">{t('topics.contentLabel')}</label>
               <textarea
                 value={formData.content}
                 onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                className="form-input min-h-[150px] resize-y"
-                placeholder={t('stories.contentPlaceholder')}
+                className="form-input min-h-[120px] resize-y"
+                placeholder={t('topics.contentPlaceholder')}
                 dir="auto"
               />
             </div>
 
             {/* Images Section */}
             <div>
-              <label className="block text-sm font-medium mb-2">{t('stories.imagesLabel')} (4 max)</label>
+              <label className="block text-sm font-medium mb-2">{t('topics.imagesLabel')} (6 max)</label>
               {formData.images.length > 0 && (
-                <div className="grid grid-cols-4 gap-2 mb-3">
+                <div className="grid grid-cols-3 gap-2 mb-3">
                   {formData.images.map((img, index) => (
                     <div key={index} className="relative aspect-square rounded-lg overflow-hidden">
                       <img src={img} alt="" className="w-full h-full object-cover" />
@@ -272,14 +281,14 @@ const SheikhStories: React.FC = () => {
                   ))}
                 </div>
               )}
-              {formData.images.length < 4 && (
-                <ImageUpload onChange={handleImageChange} storagePath="stories" />
+              {formData.images.length < 6 && (
+                <ImageUpload onChange={handleImageChange} storagePath="topics" />
               )}
             </div>
 
             {/* Videos Section */}
             <div>
-              <label className="block text-sm font-medium mb-2">{t('stories.videosLabel')} (3 max)</label>
+              <label className="block text-sm font-medium mb-2">{t('topics.videosLabel')} (3 max)</label>
               {formData.videos.length > 0 && (
                 <div className="grid grid-cols-2 gap-2 mb-3">
                   {formData.videos.map((vid, index) => (
@@ -292,13 +301,13 @@ const SheikhStories: React.FC = () => {
                 </div>
               )}
               {formData.videos.length < 3 && (
-                <VideoUpload onChange={handleVideoChange} storagePath="stories" />
+                <VideoUpload onChange={handleVideoChange} storagePath="topics" />
               )}
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-2">{t('news.dateLabel')}</label>
+                <label className="block text-sm font-medium mb-2">{t('topics.dateLabel')}</label>
                 <input
                   type="date"
                   value={formData.publishDate}
@@ -308,14 +317,14 @@ const SheikhStories: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2">{t('stories.statusLabel')}</label>
+                <label className="block text-sm font-medium mb-2">{t('topics.statusLabel')}</label>
                 <select
                   value={formData.status}
                   onChange={(e) => setFormData({ ...formData, status: e.target.value as ContentStatus })}
                   className="form-input"
                 >
-                  <option value="draft">{t('stories.statusDraft')}</option>
-                  <option value="published">{t('stories.statusPublished')}</option>
+                  <option value="draft">{t('topics.statusDraft')}</option>
+                  <option value="published">{t('topics.statusPublished')}</option>
                 </select>
               </div>
             </div>
@@ -333,17 +342,16 @@ const SheikhStories: React.FC = () => {
           </form>
         </Modal>
 
-        {/* Delete Confirmation */}
         <DeleteConfirmation
           isOpen={!!deleteItem}
           onClose={() => setDeleteItem(null)}
           onConfirm={() => deleteItem && handleDelete(deleteItem)}
-          title={t('stories.deleteTitle')}
-          message={t('stories.deleteMessage')}
+          title={t('topics.deleteTitle')}
+          message={t('topics.deleteMessage')}
         />
       </div>
     </DashboardLayout>
   );
 };
 
-export default SheikhStories;
+export default ReligiousTopics;

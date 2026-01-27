@@ -10,7 +10,9 @@ import {
   LogOut, 
   Menu, 
   X,
-  LayoutDashboard
+  LayoutDashboard,
+  Calendar,
+  BookMarked
 } from 'lucide-react';
 
 interface DashboardLayoutProps {
@@ -29,6 +31,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     { path: '/news', label: t('nav.news'), icon: Newspaper },
     { path: '/martyrs', label: t('nav.martyrs'), icon: Users },
     { path: '/sheikh-stories', label: t('nav.sheikhStories'), icon: BookOpen },
+    { path: '/activities', label: t('nav.activities'), icon: Calendar },
+    { path: '/topics', label: t('nav.topics'), icon: BookMarked },
   ];
 
   const handleLogout = () => {
