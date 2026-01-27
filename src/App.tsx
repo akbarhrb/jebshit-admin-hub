@@ -10,6 +10,8 @@ import Dashboard from "./pages/Dashboard";
 import News from "./pages/News";
 import Martyrs from "./pages/Martyrs";
 import SheikhStories from "./pages/SheikhStories";
+import MosqueActivities from "./pages/MosqueActivities";
+import ReligiousTopics from "./pages/ReligiousTopics";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -53,6 +55,22 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <SheikhStories />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/activities"
+              element={
+                <ProtectedRoute>
+                  <MosqueActivities />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/topics"
+              element={
+                <ProtectedRoute>
+                  <ReligiousTopics />
                 </ProtectedRoute>
               }
             />

@@ -28,6 +28,32 @@ export interface SheikhStory {
   title: string;
   content: string;
   images: string[];
+  videos: string[];
+  publishDate: string;
+  status: ContentStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MosqueActivity {
+  id: string;
+  title: string;
+  description: string;
+  content: string;
+  date: string;
+  images: string[];
+  status: ContentStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ReligiousTopic {
+  id: string;
+  title: string;
+  description: string;
+  content: string;
+  images: string[];
+  videos: string[];
   publishDate: string;
   status: ContentStatus;
   createdAt: string;
