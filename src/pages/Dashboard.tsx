@@ -2,8 +2,8 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useFirestore } from '@/hooks/useFirestore';
-import { NewsItem, Martyr, SheikhStory, MosqueActivity, ReligiousTopic } from '@/types/content';
-import { Newspaper, Users, BookOpen, Calendar, BookMarked, ArrowRight, ArrowLeft } from 'lucide-react';
+import { NewsItem, Martyr, SheikhStory, MosqueActivity, ReligiousTopic, JobOpportunity, VillageMemory } from '@/types/content';
+import { Newspaper, Users, BookOpen, Calendar, BookMarked, Briefcase, Camera, ArrowRight, ArrowLeft } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 
 const Dashboard: React.FC = () => {
@@ -13,6 +13,8 @@ const Dashboard: React.FC = () => {
   const { data: stories } = useFirestore<SheikhStory>('stories');
   const { data: activities } = useFirestore<MosqueActivity>('activities');
   const { data: topics } = useFirestore<ReligiousTopic>('topics');
+  const { data: jobs } = useFirestore<JobOpportunity>('jobs');
+  const { data: memories } = useFirestore<VillageMemory>('memories');
 
   const isRTL = i18n.language === 'ar';
   const ArrowIcon = isRTL ? ArrowLeft : ArrowRight;
@@ -58,6 +60,22 @@ const Dashboard: React.FC = () => {
       path: '/topics',
       color: 'bg-accent/10 text-accent-foreground',
     },
+    {
+      label: t('dashboard.jobsCount'),
+      count: jobs.length,
+      published: jobs.filter((j) => j.status === 'published').length,
+      icon: Briefcase,
+      path: '/jobs',
+      color: 'bg-orange-500/10 text-orange-600',
+    },
+    {
+      label: t('dashboard.memoriesCount'),
+      count: memories.length,
+      published: memories.filter((m) => m.status === 'published').length,
+      icon: Camera,
+      path: '/memories',
+      color: 'bg-pink-500/10 text-pink-600',
+    },
   ];
 
   return (
@@ -97,7 +115,7 @@ const Dashboard: React.FC = () => {
         {/* Quick Actions */}
         <div className="bg-card rounded-xl border border-border p-6">
           <h2 className="text-lg font-semibold text-card-foreground mb-4">{t('dashboard.quickActions')}</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             <Link to="/news" className="btn-secondary text-center">
               {t('dashboard.addNewsArticle')}
             </Link>
@@ -112,6 +130,12 @@ const Dashboard: React.FC = () => {
             </Link>
             <Link to="/topics" className="btn-secondary text-center">
               {t('dashboard.addTopic')}
+            </Link>
+            <Link to="/jobs" className="btn-secondary text-center">
+              {t('dashboard.addJob')}
+            </Link>
+            <Link to="/memories" className="btn-secondary text-center">
+              {t('dashboard.addMemory')}
             </Link>
           </div>
         </div>

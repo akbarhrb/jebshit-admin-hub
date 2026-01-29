@@ -12,7 +12,9 @@ import {
   X,
   LayoutDashboard,
   Calendar,
-  BookMarked
+  BookMarked,
+  Briefcase,
+  Camera
 } from 'lucide-react';
 
 interface DashboardLayoutProps {
@@ -33,6 +35,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     { path: '/sheikh-stories', label: t('nav.sheikhStories'), icon: BookOpen },
     { path: '/activities', label: t('nav.activities'), icon: Calendar },
     { path: '/topics', label: t('nav.topics'), icon: BookMarked },
+    { path: '/jobs', label: t('nav.jobs'), icon: Briefcase },
+    { path: '/memories', label: t('nav.memories'), icon: Camera },
   ];
 
   const handleLogout = () => {

@@ -12,6 +12,8 @@ import Martyrs from "./pages/Martyrs";
 import SheikhStories from "./pages/SheikhStories";
 import MosqueActivities from "./pages/MosqueActivities";
 import ReligiousTopics from "./pages/ReligiousTopics";
+import JobOpportunities from "./pages/JobOpportunities";
+import VillageMemories from "./pages/VillageMemories";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -71,6 +73,22 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <ReligiousTopics />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/jobs"
+              element={
+                <ProtectedRoute>
+                  <JobOpportunities />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/memories"
+              element={
+                <ProtectedRoute>
+                  <VillageMemories />
                 </ProtectedRoute>
               }
             />
