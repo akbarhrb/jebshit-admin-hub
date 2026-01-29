@@ -59,3 +59,33 @@ export interface ReligiousTopic {
   createdAt: string;
   updatedAt: string;
 }
+
+export type JobType = 'full-time' | 'part-time' | 'temporary';
+
+export interface JobOpportunity {
+  id: string;
+  title: string;
+  description: string;
+  jobType: JobType;
+  location: string;
+  contactInfo: string;
+  content: string;
+  publishDate: string;
+  expiryDate?: string;
+  status: ContentStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface VillageMemory {
+  id: string;
+  title: string;
+  description: string;
+  content: string;
+  images: string[];
+  videos: string[];
+  memoryDate?: string;
+  status: ContentStatus;
+  createdAt: string;
+  updatedAt: string;
+}
