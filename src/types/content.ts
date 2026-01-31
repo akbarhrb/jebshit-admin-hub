@@ -7,6 +7,7 @@ export interface NewsItem {
   content: string;
   date: string;
   isUrgent: boolean;
+  mediaUrls: string[];
   status: ContentStatus;
   createdAt: string;
   updatedAt: string;

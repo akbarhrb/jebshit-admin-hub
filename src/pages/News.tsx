@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { Plus, Search, Loader2, AlertTriangle } from 'lucide-react';
+import { Plus, Search, Loader2, AlertTriangle, Image as ImageIcon, Video } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import Modal from '@/components/ui/Modal';
 import DeleteConfirmation from '@/components/ui/DeleteConfirmation';
+import MediaUpload from '@/components/ui/MediaUpload';
 import { useFirestore } from '@/hooks/useFirestore';
 import { NewsItem, ContentStatus } from '@/types/content';
 import { Switch } from '@/components/ui/switch';
@@ -26,6 +27,7 @@ const News: React.FC = () => {
     date: new Date().toISOString().split('T')[0],
     isUrgent: false,
     status: 'draft' as ContentStatus,
+    mediaUrls: [] as string[],
   });
 
   const filteredNews = news.filter((item) =>
@@ -41,6 +43,7 @@ const News: React.FC = () => {
       date: new Date().toISOString().split('T')[0],
       isUrgent: false,
       status: 'draft',
+      mediaUrls: [],
     });
     setEditingItem(null);
   };
@@ -55,6 +58,7 @@ const News: React.FC = () => {
         date: item.date ? new Date(item.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
         isUrgent: item.isUrgent || false,
         status: item.status,
+        mediaUrls: item.mediaUrls || [],
       });
     } else {
       resetForm();
@@ -92,9 +96,10 @@ const News: React.FC = () => {
         title: formData.title.trim(),
         description: formData.description.trim(),
         content: formData.content.trim(),
-        date: formData.date, // Will be converted to Timestamp by useFirestore
+        date: formData.date,
         isUrgent: formData.isUrgent,
         status: formData.status,
+        mediaUrls: formData.mediaUrls,
       };
 
       if (editingItem) {
@@ -172,6 +177,22 @@ const News: React.FC = () => {
                 key={item.id}
                 className="bg-card rounded-lg border border-border overflow-hidden card-hover"
               >
+                {/* Media Preview */}
+                {item.mediaUrls && item.mediaUrls.length > 0 && (
+                  <div className="relative h-40 bg-secondary/30">
+                    {item.mediaUrls[0].includes('video') || item.mediaUrls[0].includes('.mp4') || item.mediaUrls[0].includes('.mov') ? (
+                      <video src={item.mediaUrls[0]} className="w-full h-full object-cover" preload="metadata" />
+                    ) : (
+                      <img src={item.mediaUrls[0]} alt={item.title} className="w-full h-full object-cover" />
+                    )}
+                    {item.mediaUrls.length > 1 && (
+                      <div className="absolute bottom-2 end-2 px-2 py-1 bg-background/80 rounded text-xs flex items-center gap-1">
+                        <ImageIcon className="w-3 h-3" />
+                        +{item.mediaUrls.length - 1}
+                      </div>
+                    )}
+                  </div>
+                )}
                 <div className="p-4">
                   <div className="flex items-start justify-between gap-3 mb-2">
                     <div className="flex items-center gap-2">
@@ -299,6 +320,17 @@ const News: React.FC = () => {
                 <AlertTriangle className="w-4 h-4 text-destructive" />
                 {t('news.markAsUrgent')}
               </Label>
+            </div>
+
+            {/* Media Upload Section */}
+            <div>
+              <label className="block text-sm font-medium mb-2">{t('news.mediaLabel')}</label>
+              <MediaUpload
+                value={formData.mediaUrls}
+                onChange={(urls) => setFormData({ ...formData, mediaUrls: urls })}
+                storagePath="news"
+                maxFiles={10}
+              />
             </div>
 
             <div className="flex gap-3 pt-4">

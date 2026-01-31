@@ -89,7 +89,8 @@
     "deletedSuccess": "تم حذف الخبر بنجاح",
     "saveFailed": "فشل حفظ الخبر",
     "deleteFailed": "فشل حذف الخبر",
-    "noDate": "بدون تاريخ"
+    "noDate": "بدون تاريخ",
+    "mediaLabel": "الوسائط (صور وفيديوهات)"
   },
   "martyrs": {
     "title": "الشهداء",
@@ -217,7 +218,17 @@
     "videoUploaded": "تم رفع الفيديو بنجاح",
     "videoUploadFailed": "فشل رفع الفيديو",
     "videoTooLarge": "يجب أن يكون الفيديو أقل من {{size}} ميجابايت",
-    "invalidVideoType": "يرجى رفع ملف فيديو صالح (MP4, WebM)"
+    "invalidVideoType": "يرجى رفع ملف فيديو صالح (MP4, WebM)",
+    "dropOrClick": "اسحب الملفات أو انقر للرفع",
+    "supportedFormats": "JPG, PNG, MP4, MOV",
+    "maxFilesReached": "الحد الأقصى {{max}} ملفات مسموح بها",
+    "invalidFileType": "نوع ملف غير صالح: {{name}}",
+    "fileTooLarge": "{{name}} يتجاوز حد {{size}} ميجابايت",
+    "uploadFailed": "فشل رفع {{name}}",
+    "uploadSuccess": "تم رفع {{count}} ملف(ات) بنجاح",
+    "moveUp": "نقل للأعلى",
+    "moveDown": "نقل للأسفل",
+    "remove": "إزالة"
   },
   "validation": {
     "required": "هذا الحقل مطلوب",
