@@ -92,7 +92,7 @@ const News: React.FC = () => {
         title: formData.title.trim(),
         description: formData.description.trim(),
         content: formData.content.trim(),
-        date: new Date(formData.date).toISOString(),
+        date: formData.date, // Will be converted to Timestamp by useFirestore
         isUrgent: formData.isUrgent,
         status: formData.status,
       };

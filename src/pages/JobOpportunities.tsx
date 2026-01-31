@@ -60,7 +60,7 @@ const JobOpportunities: React.FC = () => {
         location: item.location,
         contactInfo: item.contactInfo,
         content: item.content,
-        publishDate: item.publishDate,
+        publishDate: item.publishDate || new Date().toISOString().split('T')[0],
         expiryDate: item.expiryDate || '',
         status: item.status,
       });
@@ -189,7 +189,7 @@ const JobOpportunities: React.FC = () => {
                 subtitle={`${getJobTypeLabel(item.jobType)} • ${item.location}`}
                 status={item.status}
                 statusLabels={{ published: t('jobs.statusPublished'), draft: t('jobs.statusDraft') }}
-                date={new Date(item.publishDate).toLocaleDateString()}
+                date={item.publishDate ? new Date(item.publishDate).toLocaleDateString() : ''}
                 onEdit={() => openModal(item)}
                 onDelete={() => setDeleteItem(item)}
               />

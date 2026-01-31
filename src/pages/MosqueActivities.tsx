@@ -53,7 +53,7 @@ const MosqueActivities: React.FC = () => {
         title: item.title,
         description: item.description,
         content: item.content,
-        date: item.date,
+        date: item.date || new Date().toISOString().split('T')[0],
         images: item.images || [],
         status: item.status,
       });
@@ -182,7 +182,7 @@ const MosqueActivities: React.FC = () => {
                 image={item.images?.[0]}
                 status={item.status}
                 statusLabels={{ published: t('activities.statusPublished'), draft: t('activities.statusDraft') }}
-                date={new Date(item.date).toLocaleDateString()}
+                date={item.date ? new Date(item.date).toLocaleDateString() : ''}
                 onEdit={() => openModal(item)}
                 onDelete={() => setDeleteItem(item)}
               />
