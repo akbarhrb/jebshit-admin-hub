@@ -55,7 +55,7 @@ const SheikhStories: React.FC = () => {
         content: item.content,
         images: item.images || [],
         videos: item.videos || [],
-        publishDate: item.publishDate,
+        publishDate: item.publishDate || new Date().toISOString().split('T')[0],
         status: item.status,
       });
     } else {
@@ -215,7 +215,7 @@ const SheikhStories: React.FC = () => {
                 image={item.images?.[0]}
                 status={item.status}
                 statusLabels={{ published: t('stories.statusPublished'), draft: t('stories.statusDraft') }}
-                date={new Date(item.publishDate).toLocaleDateString()}
+                date={item.publishDate ? new Date(item.publishDate).toLocaleDateString() : ''}
                 onEdit={() => openModal(item)}
                 onDelete={() => setDeleteItem(item)}
               />

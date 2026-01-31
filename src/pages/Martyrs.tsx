@@ -50,7 +50,7 @@ const Martyrs: React.FC = () => {
       setFormData({
         name: item.name,
         photo: item.photo || '',
-        dateOfMartyrdom: item.dateOfMartyrdom,
+        dateOfMartyrdom: item.dateOfMartyrdom || '',
         biography: item.biography,
         status: item.status,
       });
