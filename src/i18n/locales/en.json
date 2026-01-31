@@ -89,7 +89,8 @@
     "deletedSuccess": "News deleted successfully",
     "saveFailed": "Failed to save news",
     "deleteFailed": "Failed to delete news",
-    "noDate": "No date"
+    "noDate": "No date",
+    "mediaLabel": "Media (Images & Videos)"
   },
   "martyrs": {
     "title": "Martyrs",
@@ -217,7 +218,17 @@
     "videoUploaded": "Video uploaded successfully",
     "videoUploadFailed": "Failed to upload video",
     "videoTooLarge": "Video must be less than {{size}}MB",
-    "invalidVideoType": "Please upload a valid video file (MP4, WebM)"
+    "invalidVideoType": "Please upload a valid video file (MP4, WebM)",
+    "dropOrClick": "Drop files or click to upload",
+    "supportedFormats": "JPG, PNG, MP4, MOV",
+    "maxFilesReached": "Maximum {{max}} files allowed",
+    "invalidFileType": "Invalid file type: {{name}}",
+    "fileTooLarge": "{{name}} exceeds {{size}}MB limit",
+    "uploadFailed": "Failed to upload {{name}}",
+    "uploadSuccess": "{{count}} file(s) uploaded successfully",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "remove": "Remove"
   },
   "validation": {
     "required": "This field is required",
