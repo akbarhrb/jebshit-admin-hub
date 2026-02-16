@@ -28,6 +28,7 @@ const News: React.FC = () => {
     isUrgent: false,
     status: 'draft' as ContentStatus,
     mediaUrls: [] as string[],
+    youtubeIds: [] as string[],
   });
 
   const filteredNews = news.filter((item) =>
@@ -44,6 +45,7 @@ const News: React.FC = () => {
       isUrgent: false,
       status: 'draft',
       mediaUrls: [],
+      youtubeIds: [],
     });
     setEditingItem(null);
   };
@@ -59,6 +61,7 @@ const News: React.FC = () => {
         isUrgent: item.isUrgent || false,
         status: item.status,
         mediaUrls: item.mediaUrls || [],
+        youtubeIds: item.youtubeIds || [],
       });
     } else {
       resetForm();
@@ -100,6 +103,7 @@ const News: React.FC = () => {
         isUrgent: formData.isUrgent,
         status: formData.status,
         mediaUrls: formData.mediaUrls,
+        youtubeIds: formData.youtubeIds,
       };
 
       if (editingItem) {
@@ -180,17 +184,27 @@ const News: React.FC = () => {
                 {/* Media Preview */}
                 {item.mediaUrls && item.mediaUrls.length > 0 && (
                   <div className="relative h-40 bg-secondary/30">
-                    {item.mediaUrls[0].includes('video') || item.mediaUrls[0].includes('.mp4') || item.mediaUrls[0].includes('.mov') ? (
-                      <video src={item.mediaUrls[0]} className="w-full h-full object-cover" preload="metadata" />
-                    ) : (
-                      <img src={item.mediaUrls[0]} alt={item.title} className="w-full h-full object-cover" />
-                    )}
-                    {item.mediaUrls.length > 1 && (
+                    <img src={item.mediaUrls[0]} alt={item.title} className="w-full h-full object-cover" />
+                    {(item.mediaUrls.length > 1 || (item.youtubeIds && item.youtubeIds.length > 0)) && (
                       <div className="absolute bottom-2 end-2 px-2 py-1 bg-background/80 rounded text-xs flex items-center gap-1">
                         <ImageIcon className="w-3 h-3" />
-                        +{item.mediaUrls.length - 1}
+                        +{item.mediaUrls.length - 1 + (item.youtubeIds?.length || 0)}
                       </div>
                     )}
+                  </div>
+                )}
+                {/* YouTube preview if no images */}
+                {(!item.mediaUrls || item.mediaUrls.length === 0) && item.youtubeIds && item.youtubeIds.length > 0 && (
+                  <div className="relative h-40 bg-secondary/30">
+                    <img
+                      src={`https://img.youtube.com/vi/${item.youtubeIds[0]}/hqdefault.jpg`}
+                      alt={item.title}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute bottom-2 end-2 px-2 py-1 bg-background/80 rounded text-xs flex items-center gap-1">
+                      <Video className="w-3 h-3" />
+                      {item.youtubeIds.length}
+                    </div>
                   </div>
                 )}
                 <div className="p-4">
@@ -326,10 +340,14 @@ const News: React.FC = () => {
             <div>
               <label className="block text-sm font-medium mb-2">{t('news.mediaLabel')}</label>
               <MediaUpload
-                value={formData.mediaUrls}
-                onChange={(urls) => setFormData({ ...formData, mediaUrls: urls })}
+                imageUrls={formData.mediaUrls}
+                youtubeIds={formData.youtubeIds}
+                onImagesChange={(urls) => setFormData({ ...formData, mediaUrls: urls })}
+                onYouTubeIdsChange={(ids) => setFormData({ ...formData, youtubeIds: ids })}
                 storagePath="news"
-                maxFiles={10}
+                maxImages={10}
+                maxVideos={5}
+                contentTitle={formData.title}
               />
             </div>
 

@@ -7,7 +7,7 @@ import ContentCard from '@/components/ui/ContentCard';
 import Modal from '@/components/ui/Modal';
 import DeleteConfirmation from '@/components/ui/DeleteConfirmation';
 import ImageUpload from '@/components/ui/ImageUpload';
-import VideoUpload, { VideoPreview } from '@/components/ui/VideoUpload';
+import VideoUpload, { YouTubePreview } from '@/components/ui/VideoUpload';
 import { useFirestore } from '@/hooks/useFirestore';
 import { useFirebaseStorage } from '@/hooks/useFirebaseStorage';
 import { SheikhStory, ContentStatus } from '@/types/content';
@@ -26,7 +26,7 @@ const SheikhStories: React.FC = () => {
     title: '',
     content: '',
     images: [] as string[],
-    videos: [] as string[],
+    youtubeIds: [] as string[],
     publishDate: new Date().toISOString().split('T')[0],
     status: 'draft' as ContentStatus,
   });
@@ -40,7 +40,7 @@ const SheikhStories: React.FC = () => {
       title: '',
       content: '',
       images: [],
-      videos: [],
+      youtubeIds: [],
       publishDate: new Date().toISOString().split('T')[0],
       status: 'draft',
     });
@@ -54,7 +54,7 @@ const SheikhStories: React.FC = () => {
         title: item.title,
         content: item.content,
         images: item.images || [],
-        videos: item.videos || [],
+        youtubeIds: item.youtubeIds || [],
         publishDate: item.publishDate || new Date().toISOString().split('T')[0],
         status: item.status,
       });
@@ -86,18 +86,10 @@ const SheikhStories: React.FC = () => {
 
     try {
       if (editingItem) {
-        // Delete removed images
         const removedImages = (editingItem.images || []).filter(
           (img) => !formData.images.includes(img)
         );
-        // Delete removed videos
-        const removedVideos = (editingItem.videos || []).filter(
-          (vid) => !formData.videos.includes(vid)
-        );
-        await Promise.all([
-          ...removedImages.map((img) => deleteImage(img)),
-          ...removedVideos.map((vid) => deleteImage(vid)),
-        ]);
+        await Promise.all(removedImages.map((img) => deleteImage(img)));
         
         await update(editingItem.id, formData);
         toast.success(t('stories.updatedSuccess'));
@@ -115,11 +107,7 @@ const SheikhStories: React.FC = () => {
 
   const handleDelete = async (item: SheikhStory) => {
     try {
-      // Delete all images and videos
-      await Promise.all([
-        ...(item.images || []).map((img) => deleteImage(img)),
-        ...(item.videos || []).map((vid) => deleteImage(vid)),
-      ]);
+      await Promise.all((item.images || []).map((img) => deleteImage(img)));
       await remove(item.id);
       toast.success(t('stories.deletedSuccess'));
     } catch (error) {
@@ -133,9 +121,9 @@ const SheikhStories: React.FC = () => {
     }
   };
 
-  const handleVideoChange = (url: string | undefined) => {
-    if (url) {
-      setFormData({ ...formData, videos: [url, ...formData.videos.slice(0, 2)] });
+  const handleVideoChange = (youtubeId: string | undefined) => {
+    if (youtubeId) {
+      setFormData({ ...formData, youtubeIds: [youtubeId, ...formData.youtubeIds.slice(0, 2)] });
     }
   };
 
@@ -150,14 +138,10 @@ const SheikhStories: React.FC = () => {
     });
   };
 
-  const removeVideo = async (index: number) => {
-    const videoToRemove = formData.videos[index];
-    if (!editingItem || !editingItem.videos?.includes(videoToRemove)) {
-      await deleteImage(videoToRemove);
-    }
+  const removeVideo = (index: number) => {
     setFormData({
       ...formData,
-      videos: formData.videos.filter((_, i) => i !== index),
+      youtubeIds: formData.youtubeIds.filter((_, i) => i !== index),
     });
   };
 
@@ -174,7 +158,6 @@ const SheikhStories: React.FC = () => {
   return (
     <DashboardLayout>
       <div className="max-w-6xl mx-auto">
-        {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
             <h1 className="page-header">{t('stories.title')}</h1>
@@ -186,7 +169,6 @@ const SheikhStories: React.FC = () => {
           </button>
         </div>
 
-        {/* Search */}
         <div className="relative mb-6">
           <Search className="absolute start-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
           <input
@@ -198,7 +180,6 @@ const SheikhStories: React.FC = () => {
           />
         </div>
 
-        {/* Grid */}
         {filteredStories.length === 0 ? (
           <div className="text-center py-12 bg-card rounded-xl border border-border">
             <p className="text-muted-foreground">
@@ -223,7 +204,6 @@ const SheikhStories: React.FC = () => {
           </div>
         )}
 
-        {/* Form Modal */}
         <Modal
           isOpen={isModalOpen}
           onClose={closeModal}
@@ -253,7 +233,6 @@ const SheikhStories: React.FC = () => {
               />
             </div>
 
-            {/* Images Section */}
             <div>
               <label className="block text-sm font-medium mb-2">{t('stories.imagesLabel')} (4 max)</label>
               {formData.images.length > 0 && (
@@ -277,22 +256,21 @@ const SheikhStories: React.FC = () => {
               )}
             </div>
 
-            {/* Videos Section */}
             <div>
               <label className="block text-sm font-medium mb-2">{t('stories.videosLabel')} (3 max)</label>
-              {formData.videos.length > 0 && (
+              {formData.youtubeIds.length > 0 && (
                 <div className="grid grid-cols-2 gap-2 mb-3">
-                  {formData.videos.map((vid, index) => (
-                    <VideoPreview
+                  {formData.youtubeIds.map((id, index) => (
+                    <YouTubePreview
                       key={index}
-                      url={vid}
+                      youtubeId={id}
                       onRemove={() => removeVideo(index)}
                     />
                   ))}
                 </div>
               )}
-              {formData.videos.length < 3 && (
-                <VideoUpload onChange={handleVideoChange} storagePath="stories" />
+              {formData.youtubeIds.length < 3 && (
+                <VideoUpload onChange={handleVideoChange} title={formData.title || 'Sheikh Story'} />
               )}
             </div>
 
@@ -333,7 +311,6 @@ const SheikhStories: React.FC = () => {
           </form>
         </Modal>
 
-        {/* Delete Confirmation */}
         <DeleteConfirmation
           isOpen={!!deleteItem}
           onClose={() => setDeleteItem(null)}
