@@ -7,7 +7,7 @@ import ContentCard from '@/components/ui/ContentCard';
 import Modal from '@/components/ui/Modal';
 import DeleteConfirmation from '@/components/ui/DeleteConfirmation';
 import ImageUpload from '@/components/ui/ImageUpload';
-import VideoUpload, { VideoPreview } from '@/components/ui/VideoUpload';
+import VideoUpload, { YouTubePreview } from '@/components/ui/VideoUpload';
 import { useFirestore } from '@/hooks/useFirestore';
 import { useFirebaseStorage } from '@/hooks/useFirebaseStorage';
 import { ReligiousTopic, ContentStatus } from '@/types/content';
@@ -27,7 +27,7 @@ const ReligiousTopics: React.FC = () => {
     description: '',
     content: '',
     images: [] as string[],
-    videos: [] as string[],
+    youtubeIds: [] as string[],
     publishDate: new Date().toISOString().split('T')[0],
     status: 'draft' as ContentStatus,
   });
@@ -42,7 +42,7 @@ const ReligiousTopics: React.FC = () => {
       description: '',
       content: '',
       images: [],
-      videos: [],
+      youtubeIds: [],
       publishDate: new Date().toISOString().split('T')[0],
       status: 'draft',
     });
@@ -57,7 +57,7 @@ const ReligiousTopics: React.FC = () => {
         description: item.description,
         content: item.content,
         images: item.images || [],
-        videos: item.videos || [],
+        youtubeIds: item.youtubeIds || [],
         publishDate: item.publishDate || new Date().toISOString().split('T')[0],
         status: item.status,
       });
@@ -89,18 +89,10 @@ const ReligiousTopics: React.FC = () => {
 
     try {
       if (editingItem) {
-        // Delete removed images
         const removedImages = (editingItem.images || []).filter(
           (img) => !formData.images.includes(img)
         );
-        // Delete removed videos
-        const removedVideos = (editingItem.videos || []).filter(
-          (vid) => !formData.videos.includes(vid)
-        );
-        await Promise.all([
-          ...removedImages.map((img) => deleteImage(img)),
-          ...removedVideos.map((vid) => deleteImage(vid)),
-        ]);
+        await Promise.all(removedImages.map((img) => deleteImage(img)));
         
         await update(editingItem.id, formData);
         toast.success(t('topics.updatedSuccess'));
@@ -118,10 +110,7 @@ const ReligiousTopics: React.FC = () => {
 
   const handleDelete = async (item: ReligiousTopic) => {
     try {
-      await Promise.all([
-        ...(item.images || []).map((img) => deleteImage(img)),
-        ...(item.videos || []).map((vid) => deleteImage(vid)),
-      ]);
+      await Promise.all((item.images || []).map((img) => deleteImage(img)));
       await remove(item.id);
       toast.success(t('topics.deletedSuccess'));
     } catch (error) {
@@ -135,9 +124,9 @@ const ReligiousTopics: React.FC = () => {
     }
   };
 
-  const handleVideoChange = (url: string | undefined) => {
-    if (url) {
-      setFormData({ ...formData, videos: [url, ...formData.videos.slice(0, 2)] });
+  const handleVideoChange = (youtubeId: string | undefined) => {
+    if (youtubeId) {
+      setFormData({ ...formData, youtubeIds: [youtubeId, ...formData.youtubeIds.slice(0, 2)] });
     }
   };
 
@@ -152,14 +141,10 @@ const ReligiousTopics: React.FC = () => {
     });
   };
 
-  const removeVideo = async (index: number) => {
-    const videoToRemove = formData.videos[index];
-    if (!editingItem || !editingItem.videos?.includes(videoToRemove)) {
-      await deleteImage(videoToRemove);
-    }
+  const removeVideo = (index: number) => {
     setFormData({
       ...formData,
-      videos: formData.videos.filter((_, i) => i !== index),
+      youtubeIds: formData.youtubeIds.filter((_, i) => i !== index),
     });
   };
 
@@ -262,7 +247,6 @@ const ReligiousTopics: React.FC = () => {
               />
             </div>
 
-            {/* Images Section */}
             <div>
               <label className="block text-sm font-medium mb-2">{t('topics.imagesLabel')} (6 max)</label>
               {formData.images.length > 0 && (
@@ -286,22 +270,21 @@ const ReligiousTopics: React.FC = () => {
               )}
             </div>
 
-            {/* Videos Section */}
             <div>
               <label className="block text-sm font-medium mb-2">{t('topics.videosLabel')} (3 max)</label>
-              {formData.videos.length > 0 && (
+              {formData.youtubeIds.length > 0 && (
                 <div className="grid grid-cols-2 gap-2 mb-3">
-                  {formData.videos.map((vid, index) => (
-                    <VideoPreview
+                  {formData.youtubeIds.map((id, index) => (
+                    <YouTubePreview
                       key={index}
-                      url={vid}
+                      youtubeId={id}
                       onRemove={() => removeVideo(index)}
                     />
                   ))}
                 </div>
               )}
-              {formData.videos.length < 3 && (
-                <VideoUpload onChange={handleVideoChange} storagePath="topics" />
+              {formData.youtubeIds.length < 3 && (
+                <VideoUpload onChange={handleVideoChange} title={formData.title || 'Religious Topic'} />
               )}
             </div>
 

@@ -8,6 +8,7 @@ export interface NewsItem {
   date: string;
   isUrgent: boolean;
   mediaUrls: string[];
+  youtubeIds: string[];
   status: ContentStatus;
   createdAt: string;
   updatedAt: string;
@@ -29,7 +30,7 @@ export interface SheikhStory {
   title: string;
   content: string;
   images: string[];
-  videos: string[];
+  youtubeIds: string[];
   publishDate: string;
   status: ContentStatus;
   createdAt: string;
@@ -54,7 +55,7 @@ export interface ReligiousTopic {
   description: string;
   content: string;
   images: string[];
-  videos: string[];
+  youtubeIds: string[];
   publishDate: string;
   status: ContentStatus;
   createdAt: string;
@@ -84,7 +85,7 @@ export interface VillageMemory {
   description: string;
   content: string;
   images: string[];
-  videos: string[];
+  youtubeIds: string[];
   memoryDate?: string;
   status: ContentStatus;
   createdAt: string;

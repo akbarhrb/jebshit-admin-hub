@@ -1,35 +1,35 @@
 import React, { useRef, useState } from 'react';
 import { Video, X, Loader2 } from 'lucide-react';
-import { useFirebaseStorage } from '@/hooks/useFirebaseStorage';
+import { useYouTubeUpload } from '@/hooks/useYouTubeUpload';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 
 interface VideoUploadProps {
-  onChange: (url: string | undefined) => void;
+  onChange: (youtubeId: string | undefined) => void;
+  title?: string;
+  description?: string;
   className?: string;
-  storagePath?: string;
   maxSizeMB?: number;
 }
 
 const VideoUpload: React.FC<VideoUploadProps> = ({ 
   onChange, 
+  title = 'Untitled Video',
+  description,
   className = '',
-  storagePath = 'videos',
   maxSizeMB = 100
 }) => {
   const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const { uploadImage, isUploading } = useFirebaseStorage();
+  const { uploadVideo, isUploading } = useYouTubeUpload();
 
   const handleFileChange = async (file: File) => {
-    // Validate file size
     if (file.size > maxSizeMB * 1024 * 1024) {
       toast.error(t('media.videoTooLarge', { size: maxSizeMB }));
       return;
     }
 
-    // Validate file type
     const validTypes = ['video/mp4', 'video/webm', 'video/ogg', 'video/quicktime'];
     if (!validTypes.includes(file.type)) {
       toast.error(t('media.invalidVideoType'));
@@ -37,8 +37,8 @@ const VideoUpload: React.FC<VideoUploadProps> = ({
     }
 
     try {
-      const url = await uploadImage(file, storagePath);
-      onChange(url);
+      const youtubeId = await uploadVideo(file, title, description);
+      onChange(youtubeId);
       toast.success(t('media.videoUploaded'));
     } catch (error) {
       toast.error(t('media.videoUploadFailed'));
@@ -98,7 +98,7 @@ const VideoUpload: React.FC<VideoUploadProps> = ({
           )}
         </div>
         <p className="text-sm text-muted-foreground">
-          {isUploading ? t('media.uploading') : t('media.clickToUploadVideo')}
+          {isUploading ? t('media.uploadingToYouTube') : t('media.clickToUploadVideo')}
         </p>
         <p className="text-xs text-muted-foreground mt-1">MP4, WebM {t('media.upTo')} {maxSizeMB}MB</p>
       </div>
@@ -106,20 +106,21 @@ const VideoUpload: React.FC<VideoUploadProps> = ({
   );
 };
 
-interface VideoPreviewProps {
-  url: string;
+interface YouTubePreviewProps {
+  youtubeId: string;
   onRemove: () => void;
   disabled?: boolean;
 }
 
-export const VideoPreview: React.FC<VideoPreviewProps> = ({ url, onRemove, disabled }) => {
+export const YouTubePreview: React.FC<YouTubePreviewProps> = ({ youtubeId, onRemove, disabled }) => {
   return (
     <div className="relative rounded-lg overflow-hidden border border-border bg-secondary/50">
-      <video 
-        src={url} 
-        className="w-full h-32 object-cover"
-        controls
-        preload="metadata"
+      <iframe
+        src={`https://www.youtube.com/embed/${youtubeId}`}
+        className="w-full h-32"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowFullScreen
+        title="YouTube video"
       />
       <button
         type="button"

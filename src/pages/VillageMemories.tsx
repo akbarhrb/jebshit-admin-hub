@@ -7,7 +7,7 @@ import ContentCard from '@/components/ui/ContentCard';
 import Modal from '@/components/ui/Modal';
 import DeleteConfirmation from '@/components/ui/DeleteConfirmation';
 import ImageUpload from '@/components/ui/ImageUpload';
-import VideoUpload, { VideoPreview } from '@/components/ui/VideoUpload';
+import VideoUpload, { YouTubePreview } from '@/components/ui/VideoUpload';
 import { useFirestore } from '@/hooks/useFirestore';
 import { useFirebaseStorage } from '@/hooks/useFirebaseStorage';
 import { VillageMemory, ContentStatus } from '@/types/content';
@@ -27,7 +27,7 @@ const VillageMemories: React.FC = () => {
     description: '',
     content: '',
     images: [] as string[],
-    videos: [] as string[],
+    youtubeIds: [] as string[],
     memoryDate: '',
     status: 'draft' as ContentStatus,
   });
@@ -42,7 +42,7 @@ const VillageMemories: React.FC = () => {
       description: '',
       content: '',
       images: [],
-      videos: [],
+      youtubeIds: [],
       memoryDate: '',
       status: 'draft',
     });
@@ -57,7 +57,7 @@ const VillageMemories: React.FC = () => {
         description: item.description,
         content: item.content,
         images: item.images || [],
-        videos: item.videos || [],
+        youtubeIds: item.youtubeIds || [],
         memoryDate: item.memoryDate || '',
         status: item.status,
       });
@@ -97,13 +97,7 @@ const VillageMemories: React.FC = () => {
         const removedImages = (editingItem.images || []).filter(
           (img) => !formData.images.includes(img)
         );
-        const removedVideos = (editingItem.videos || []).filter(
-          (vid) => !formData.videos.includes(vid)
-        );
-        await Promise.all([
-          ...removedImages.map((img) => deleteImage(img)),
-          ...removedVideos.map((vid) => deleteImage(vid)),
-        ]);
+        await Promise.all(removedImages.map((img) => deleteImage(img)));
         
         await update(editingItem.id, dataToSave);
         toast.success(t('memories.updatedSuccess'));
@@ -121,10 +115,7 @@ const VillageMemories: React.FC = () => {
 
   const handleDelete = async (item: VillageMemory) => {
     try {
-      await Promise.all([
-        ...(item.images || []).map((img) => deleteImage(img)),
-        ...(item.videos || []).map((vid) => deleteImage(vid)),
-      ]);
+      await Promise.all((item.images || []).map((img) => deleteImage(img)));
       await remove(item.id);
       toast.success(t('memories.deletedSuccess'));
     } catch (error) {
@@ -138,9 +129,9 @@ const VillageMemories: React.FC = () => {
     }
   };
 
-  const handleVideoChange = (url: string | undefined) => {
-    if (url) {
-      setFormData({ ...formData, videos: [url, ...formData.videos.slice(0, 3)] });
+  const handleVideoChange = (youtubeId: string | undefined) => {
+    if (youtubeId) {
+      setFormData({ ...formData, youtubeIds: [youtubeId, ...formData.youtubeIds.slice(0, 3)] });
     }
   };
 
@@ -155,14 +146,10 @@ const VillageMemories: React.FC = () => {
     });
   };
 
-  const removeVideo = async (index: number) => {
-    const videoToRemove = formData.videos[index];
-    if (!editingItem || !editingItem.videos?.includes(videoToRemove)) {
-      await deleteImage(videoToRemove);
-    }
+  const removeVideo = (index: number) => {
     setFormData({
       ...formData,
-      videos: formData.videos.filter((_, i) => i !== index),
+      youtubeIds: formData.youtubeIds.filter((_, i) => i !== index),
     });
   };
 
@@ -290,20 +277,20 @@ const VillageMemories: React.FC = () => {
 
             <div>
               <label className="block text-sm font-medium mb-2">{t('memories.videosLabel')} (4 max)</label>
-              {formData.videos.length > 0 && (
+              {formData.youtubeIds.length > 0 && (
                 <div className="grid grid-cols-2 gap-2 mb-3">
-                  {formData.videos.map((vid, index) => (
-                    <VideoPreview
+                  {formData.youtubeIds.map((id, index) => (
+                    <YouTubePreview
                       key={index}
-                      url={vid}
+                      youtubeId={id}
                       onRemove={() => removeVideo(index)}
                       disabled={isSubmitting}
                     />
                   ))}
                 </div>
               )}
-              {formData.videos.length < 4 && (
-                <VideoUpload onChange={handleVideoChange} storagePath="memories" />
+              {formData.youtubeIds.length < 4 && (
+                <VideoUpload onChange={handleVideoChange} title={formData.title || 'Village Memory'} />
               )}
             </div>
 

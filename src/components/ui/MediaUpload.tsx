@@ -1,83 +1,64 @@
 import React, { useRef, useState } from 'react';
 import { Upload, X, Image as ImageIcon, Video, Loader2 } from 'lucide-react';
 import { useFirebaseStorage } from '@/hooks/useFirebaseStorage';
+import { useYouTubeUpload } from '@/hooks/useYouTubeUpload';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 
-interface MediaItem {
-  url: string;
-  type: 'image' | 'video';
-}
-
 interface MediaUploadProps {
-  value: string[];
-  onChange: (urls: string[]) => void;
+  imageUrls: string[];
+  youtubeIds: string[];
+  onImagesChange: (urls: string[]) => void;
+  onYouTubeIdsChange: (ids: string[]) => void;
   className?: string;
   storagePath?: string;
-  maxFiles?: number;
+  maxImages?: number;
+  maxVideos?: number;
   maxImageSizeMB?: number;
   maxVideoSizeMB?: number;
+  contentTitle?: string;
 }
 
 const MediaUpload: React.FC<MediaUploadProps> = ({
-  value = [],
-  onChange,
+  imageUrls = [],
+  youtubeIds = [],
+  onImagesChange,
+  onYouTubeIdsChange,
   className = '',
   storagePath = 'media',
-  maxFiles = 10,
+  maxImages = 10,
+  maxVideos = 5,
   maxImageSizeMB = 5,
   maxVideoSizeMB = 100,
+  contentTitle = 'Untitled',
 }) => {
   const { t } = useTranslation();
-  const inputRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const { uploadImage, deleteImage, isUploading } = useFirebaseStorage();
+  const { uploadImage, deleteImage, isUploading: isUploadingImage } = useFirebaseStorage();
+  const { uploadVideo, isUploading: isUploadingVideo } = useYouTubeUpload();
 
-  const getMediaType = (url: string): 'image' | 'video' => {
-    const videoExtensions = ['.mp4', '.mov', '.webm', '.ogg', '.quicktime'];
-    const lowerUrl = url.toLowerCase();
-    return videoExtensions.some(ext => lowerUrl.includes(ext) || lowerUrl.includes('video')) 
-      ? 'video' 
-      : 'image';
-  };
+  const isUploading = isUploadingImage || isUploadingVideo;
 
-  const mediaItems: MediaItem[] = value.map(url => ({
-    url,
-    type: getMediaType(url),
-  }));
-
-  const handleFileChange = async (files: FileList | null) => {
-    if (!files || files.length === 0) return;
-
-    const remainingSlots = maxFiles - value.length;
+  const handleImageFiles = async (files: File[]) => {
+    const remainingSlots = maxImages - imageUrls.length;
     if (remainingSlots <= 0) {
-      toast.error(t('media.maxFilesReached', { max: maxFiles }));
+      toast.error(t('media.maxFilesReached', { max: maxImages }));
       return;
     }
 
-    const filesToUpload = Array.from(files).slice(0, remainingSlots);
+    const filesToUpload = files.slice(0, remainingSlots);
     const uploadedUrls: string[] = [];
 
     for (const file of filesToUpload) {
-      // Validate file type
-      const isImage = file.type.startsWith('image/');
-      const isVideo = file.type.startsWith('video/');
-      
-      if (!isImage && !isVideo) {
-        toast.error(t('media.invalidFileType', { name: file.name }));
-        continue;
-      }
-
-      // Validate file size
-      const maxSize = isImage ? maxImageSizeMB : maxVideoSizeMB;
-      if (file.size > maxSize * 1024 * 1024) {
-        toast.error(t('media.fileTooLarge', { name: file.name, size: maxSize }));
+      if (file.size > maxImageSizeMB * 1024 * 1024) {
+        toast.error(t('media.fileTooLarge', { name: file.name, size: maxImageSizeMB }));
         continue;
       }
 
       try {
-        const subPath = isVideo ? `${storagePath}/videos` : `${storagePath}/images`;
-        const url = await uploadImage(file, subPath);
+        const url = await uploadImage(file, `${storagePath}/images`);
         uploadedUrls.push(url);
       } catch (error) {
         toast.error(t('media.uploadFailed', { name: file.name }));
@@ -85,23 +66,53 @@ const MediaUpload: React.FC<MediaUploadProps> = ({
     }
 
     if (uploadedUrls.length > 0) {
-      onChange([...value, ...uploadedUrls]);
+      onImagesChange([...imageUrls, ...uploadedUrls]);
       toast.success(t('media.uploadSuccess', { count: uploadedUrls.length }));
-    }
-
-    if (inputRef.current) {
-      inputRef.current.value = '';
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    handleFileChange(e.target.files);
+  const handleVideoFile = async (file: File) => {
+    if (youtubeIds.length >= maxVideos) {
+      toast.error(t('media.maxFilesReached', { max: maxVideos }));
+      return;
+    }
+
+    if (file.size > maxVideoSizeMB * 1024 * 1024) {
+      toast.error(t('media.fileTooLarge', { name: file.name, size: maxVideoSizeMB }));
+      return;
+    }
+
+    try {
+      const youtubeId = await uploadVideo(file, contentTitle);
+      onYouTubeIdsChange([...youtubeIds, youtubeId]);
+      toast.success(t('media.videoUploaded'));
+    } catch (error) {
+      toast.error(t('media.videoUploadFailed'));
+    }
+  };
+
+  const handleImageInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const imageFiles = Array.from(e.target.files).filter(f => f.type.startsWith('image/'));
+      if (imageFiles.length > 0) handleImageFiles(imageFiles);
+    }
+    if (imageInputRef.current) imageInputRef.current.value = '';
+  };
+
+  const handleVideoInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && file.type.startsWith('video/')) handleVideoFile(file);
+    if (videoInputRef.current) videoInputRef.current.value = '';
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-    handleFileChange(e.dataTransfer.files);
+    const files = Array.from(e.dataTransfer.files);
+    const images = files.filter(f => f.type.startsWith('image/'));
+    const videos = files.filter(f => f.type.startsWith('video/'));
+    if (images.length > 0) handleImageFiles(images);
+    if (videos.length > 0 && videos[0]) handleVideoFile(videos[0]);
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -113,48 +124,49 @@ const MediaUpload: React.FC<MediaUploadProps> = ({
     setIsDragging(false);
   };
 
-  const handleRemove = async (index: number) => {
-    const urlToRemove = value[index];
+  const handleRemoveImage = async (index: number) => {
+    const urlToRemove = imageUrls[index];
     try {
       await deleteImage(urlToRemove);
     } catch (error) {
       // Continue even if delete fails
     }
-    const newUrls = value.filter((_, i) => i !== index);
-    onChange(newUrls);
+    onImagesChange(imageUrls.filter((_, i) => i !== index));
   };
 
-  const moveItem = (fromIndex: number, direction: 'up' | 'down') => {
-    const toIndex = direction === 'up' ? fromIndex - 1 : fromIndex + 1;
-    if (toIndex < 0 || toIndex >= value.length) return;
-    
-    const newUrls = [...value];
-    [newUrls[fromIndex], newUrls[toIndex]] = [newUrls[toIndex], newUrls[fromIndex]];
-    onChange(newUrls);
+  const handleRemoveYouTube = (index: number) => {
+    onYouTubeIdsChange(youtubeIds.filter((_, i) => i !== index));
   };
 
   return (
     <div className={className}>
       <input
-        ref={inputRef}
+        ref={imageInputRef}
         type="file"
-        accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime,video/webm"
-        onChange={handleInputChange}
+        accept="image/jpeg,image/png,image/webp"
+        onChange={handleImageInputChange}
         className="hidden"
         multiple
+        disabled={isUploading}
+      />
+      <input
+        ref={videoInputRef}
+        type="file"
+        accept="video/mp4,video/quicktime,video/webm"
+        onChange={handleVideoInputChange}
+        className="hidden"
         disabled={isUploading}
       />
 
       {/* Upload Zone */}
       <div
-        onClick={() => !isUploading && value.length < maxFiles && inputRef.current?.click()}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         className={`
           flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-lg transition-colors
-          ${isUploading ? 'cursor-wait' : value.length >= maxFiles ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}
-          ${isDragging ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50 hover:bg-secondary/50'}
+          ${isUploading ? 'cursor-wait' : 'cursor-default'}
+          ${isDragging ? 'border-primary bg-primary/5' : 'border-border'}
         `}
       >
         <div className="flex items-center gap-3 mb-2">
@@ -165,88 +177,89 @@ const MediaUpload: React.FC<MediaUploadProps> = ({
               <Upload className="w-5 h-5 text-muted-foreground" />
             )}
           </div>
-          <div className="p-2 rounded-full bg-secondary">
-            <ImageIcon className="w-5 h-5 text-muted-foreground" />
-          </div>
-          <div className="p-2 rounded-full bg-secondary">
-            <Video className="w-5 h-5 text-muted-foreground" />
-          </div>
         </div>
-        <p className="text-sm text-muted-foreground text-center">
-          {isUploading ? t('media.uploading') : t('media.dropOrClick')}
+        <p className="text-sm text-muted-foreground text-center mb-3">
+          {isUploadingVideo ? t('media.uploadingToYouTube') : isUploadingImage ? t('media.uploading') : t('media.dropOrClick')}
         </p>
-        <p className="text-xs text-muted-foreground mt-1">
-          {t('media.supportedFormats')} ({value.length}/{maxFiles})
-        </p>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => !isUploading && imageUrls.length < maxImages && imageInputRef.current?.click()}
+            disabled={isUploading || imageUrls.length >= maxImages}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md bg-secondary hover:bg-secondary/80 transition-colors disabled:opacity-50"
+          >
+            <ImageIcon className="w-3.5 h-3.5" />
+            {t('media.addImages')} ({imageUrls.length}/{maxImages})
+          </button>
+          <button
+            type="button"
+            onClick={() => !isUploading && youtubeIds.length < maxVideos && videoInputRef.current?.click()}
+            disabled={isUploading || youtubeIds.length >= maxVideos}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md bg-secondary hover:bg-secondary/80 transition-colors disabled:opacity-50"
+          >
+            <Video className="w-3.5 h-3.5" />
+            {t('media.addVideos')} ({youtubeIds.length}/{maxVideos})
+          </button>
+        </div>
       </div>
 
-      {/* Media Grid Preview */}
-      {mediaItems.length > 0 && (
+      {/* Images Grid */}
+      {imageUrls.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-4">
-          {mediaItems.map((item, index) => (
+          {imageUrls.map((url, index) => (
             <div
-              key={item.url}
+              key={url}
               className="relative group rounded-lg overflow-hidden border border-border bg-secondary/30"
             >
-              {item.type === 'video' ? (
-                <video
-                  src={item.url}
-                  className="w-full h-32 object-cover"
-                  controls
-                  preload="metadata"
-                />
-              ) : (
-                <img
-                  src={item.url}
-                  alt={`Media ${index + 1}`}
-                  className="w-full h-32 object-cover"
-                />
-              )}
-              
-              {/* Type Badge */}
+              <img
+                src={url}
+                alt={`Media ${index + 1}`}
+                className="w-full h-32 object-cover"
+              />
               <div className="absolute bottom-1 start-1 px-1.5 py-0.5 rounded text-xs bg-background/80 text-foreground">
-                {item.type === 'video' ? (
-                  <Video className="w-3 h-3 inline-block" />
-                ) : (
-                  <ImageIcon className="w-3 h-3 inline-block" />
-                )}
+                <ImageIcon className="w-3 h-3 inline-block" />
               </div>
-
-              {/* Controls Overlay */}
-              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
-                {index > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => moveItem(index, 'up')}
-                    className="p-1.5 bg-background/90 rounded-full hover:bg-background transition-colors"
-                    title={t('media.moveUp')}
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                    </svg>
-                  </button>
-                )}
+              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                 <button
                   type="button"
-                  onClick={() => handleRemove(index)}
+                  onClick={() => handleRemoveImage(index)}
                   disabled={isUploading}
                   className="p-1.5 bg-destructive text-destructive-foreground rounded-full hover:opacity-90 transition-opacity disabled:opacity-50"
                   title={t('media.remove')}
                 >
                   <X className="w-4 h-4" />
                 </button>
-                {index < mediaItems.length - 1 && (
-                  <button
-                    type="button"
-                    onClick={() => moveItem(index, 'down')}
-                    className="p-1.5 bg-background/90 rounded-full hover:bg-background transition-colors"
-                    title={t('media.moveDown')}
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </button>
-                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* YouTube Videos Grid */}
+      {youtubeIds.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+          {youtubeIds.map((id, index) => (
+            <div
+              key={id}
+              className="relative group rounded-lg overflow-hidden border border-border bg-secondary/30"
+            >
+              <iframe
+                src={`https://www.youtube.com/embed/${id}`}
+                className="w-full h-32"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                title={`YouTube video ${index + 1}`}
+              />
+              <div className="absolute top-1 end-1">
+                <button
+                  type="button"
+                  onClick={() => handleRemoveYouTube(index)}
+                  disabled={isUploading}
+                  className="p-1.5 bg-destructive text-destructive-foreground rounded-full hover:opacity-90 transition-opacity disabled:opacity-50"
+                  title={t('media.remove')}
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
             </div>
           ))}
