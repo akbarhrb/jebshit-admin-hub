@@ -1,73 +1,107 @@
-# Welcome to your Lovable project
+# Jebshit Admin Portal
 
-## Project info
+A bilingual (Arabic/English) content management system for the Jebshit mobile app. Built with React, TypeScript, and Firebase.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## Features
 
-## How can I edit this code?
+### 📰 News Management
+- Create, edit, and delete news articles
+- Upload multiple images (JPG, PNG) via Firebase Storage
+- Upload videos to YouTube via Cloud Function (stored as `youtubeIds`)
+- Mark articles as urgent
+- Draft/Published status workflow
 
-There are several ways of editing your application.
+### 🕊️ Martyrs
+- Manage martyrs' biographies and profiles
+- Upload profile photos
+- Record date of martyrdom
+- Draft/Published status workflow
 
-**Use Lovable**
+### 📖 Sheikh Ragheb Harb Stories
+- Publish stories and teachings
+- Attach images and YouTube videos
+- Draft/Published status workflow
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+### 🕌 Mosque Activities
+- Manage mosque events and activities
+- Attach images
+- Schedule by date
+- Draft/Published status workflow
 
-Changes made via Lovable will be committed automatically to this repo.
+### 📚 Religious Topics
+- Publish religious educational content
+- Attach images and YouTube videos
+- Draft/Published status workflow
 
-**Use your preferred IDE**
+### 💼 Job Opportunities
+- Post local employment opportunities
+- Specify job type (full-time, part-time, temporary)
+- Set location and contact info
+- Optional expiry date
+- Draft/Published status workflow
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### 📷 Village Memories
+- Preserve local history and moments
+- Attach images and YouTube videos
+- Optional memory date
+- Draft/Published status workflow
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### 🌐 Bilingual Support
+- Full Arabic and English interface
+- RTL layout support for Arabic
+- Language toggle in sidebar
 
-Follow these steps:
+### 🔐 Authentication
+- Firebase Authentication (email/password)
+- Protected routes for all admin pages
+- Role-based access (admin/editor)
+
+## Tech Stack
+
+- **Frontend:** React 18, TypeScript, Vite
+- **UI:** Tailwind CSS, shadcn/ui
+- **Backend:** Firebase (Auth, Firestore, Storage)
+- **Video Upload:** Firebase Cloud Functions → YouTube API
+- **i18n:** i18next (Arabic & English)
+- **Routing:** React Router v6
+
+## Getting Started
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
+# Clone the repository
 git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
 cd <YOUR_PROJECT_NAME>
 
-# Step 3: Install the necessary dependencies.
-npm i
+# Install dependencies
+npm install
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Copy environment variables
+cp .env.example .env
+# Fill in your Firebase and Cloud Function values
+
+# Start development server
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+## Environment Variables
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+See [`.env.example`](.env.example) for all required variables.
 
-**Use GitHub Codespaces**
+## Project Structure
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+```
+src/
+├── components/       # Reusable UI components
+│   ├── layout/       # Dashboard layout
+│   └── ui/           # shadcn/ui + custom components
+├── contexts/         # Auth context
+├── hooks/            # Custom hooks (Firestore, Storage, YouTube)
+├── i18n/             # Translations (en.json, ar.json)
+├── lib/              # Firebase config, utilities
+├── pages/            # Route pages (Dashboard, News, Martyrs, etc.)
+└── types/            # TypeScript interfaces
+```
 
-## What technologies are used for this project?
+## License
 
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+Private project.
